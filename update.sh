@@ -75,14 +75,26 @@ echo "$newquery $start AND $end"
 restrictzoom()
 # Restrict query to a specific zoom level.
 {
-z=$1
-query=$2
-newquery=$(parsewhere "$query")
-echo "$newquery z=$z"
+    local z; local query; local newquery;
+    z=$1
+    query="$2"
+    newquery=$(parsewhere "$query")
+    echo "$newquery z = $z"
 }
 
-#restrictzoom 17 "SELECT * from yo"
-#restrictzoom 17 "SELECT * from yo WHERE id=1"
+zoomrangedquery()
+{
+    local start_zoom; local end_zoom; local query; local newquery;
+    start_zoom=$1
+    end_zoom=$2
+    query="$3"
+
+    for z in $(perl -E "say for($start_zoom..$end_zoom)")
+    do
+        newquery=$(restrictzoom $z "$query")
+        echo "$newquery"
+    done
+}
 
 rangedquery()
 # Generate a query for a given range and step-size using curl.
@@ -106,12 +118,16 @@ rangedquery()
     # multiple of $step. We want to hit all elements in the range, no
     # matter what.
     newend=$(expr $end + $step)
+    
+    # calculate end of loop relative to input start and end
+    loopend=$(expr $newend - $start)
 
     # tempend starts at zero
-    while [ $(( tempend += $step )) -le $newend ]
+    while [ $(( i += $step )) -le $loopend ]
     do
-        # initialize start variable
-        tempstart=$(expr $tempend - $step)
+        # initialize temporary start and end variables for range
+        tempstart=$(expr $i - $step + $start)
+        tempend=$(expr $tempstart + $step)
         
         # Quotes around $query are needed to avoid losing "* FROM
         # table" when echoing new query
@@ -121,7 +137,6 @@ rangedquery()
         # query a la 'SELECT * ...'. Asterix can be expanded to list
         # files in working directory.
         echo "$newquery"
-
     done
 }
 
@@ -145,5 +160,25 @@ runquery()
         fi
             echo "Error occurred:"
             echo $result
+    done
+}
+
+exportqueries()
+# Write generated queries to text file.
+#
+# Arguments:
+# $1: output path
+# $2: base url
+# $3: query or queries (one per line)
+{
+    output_file=$1
+    base_url=$2
+    queries=$3
+
+    echo "$queries" | while read q;
+    do 
+        echo "# $q" >> $output_file
+        echo $(buildurl "$base_url" "$q") >> $output_file
+        echo "" >> $output_file
     done
 }
