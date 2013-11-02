@@ -1,5 +1,5 @@
 #! /bin/sh
-. ./yo.sh
+. ./update.sh
 
 tester() 
 {
@@ -9,8 +9,11 @@ tester()
     then
         echo "Pass"
     else
+        echo
         echo "Fail"
+        echo
         echo "$result != \n$expected"
+        echo
     fi
 }
 
@@ -55,17 +58,30 @@ expected="SELECT * FROM yo WHERE id=1 AND cartodb_id>=1 AND cartodb_id<10"
 tester "$result" "$expected"
 
 result=$(restrictzoom 17 "SELECT * FROM yo")
-expected="SELECT * FROM yo WHERE z=17"
+expected="SELECT * FROM yo WHERE z = 17"
 tester "$result" "$expected"
 
 result=$(restrictzoom 17 "SELECT * FROM yo WHERE id=1")
-expected="SELECT * FROM yo WHERE id=1 AND z=17"
+expected="SELECT * FROM yo WHERE id=1 AND z = 17"
 tester "$result" "$expected"
+
+result=$(zoomrangedquery 1 5 "SELECT * FROM table")
+expected="SELECT * FROM table WHERE z = 1
+SELECT * FROM table WHERE z = 2
+SELECT * FROM table WHERE z = 3
+SELECT * FROM table WHERE z = 4
+SELECT * FROM table WHERE z = 5"
 
 result=$(rangedquery 0 1000001 250000 "SELECT * FROM yo")
 expected="SELECT * FROM yo WHERE cartodb_id>=0 AND cartodb_id<250000
 SELECT * FROM yo WHERE cartodb_id>=250000 AND cartodb_id<500000
 SELECT * FROM yo WHERE cartodb_id>=500000 AND cartodb_id<750000
+SELECT * FROM yo WHERE cartodb_id>=750000 AND cartodb_id<1000000
+SELECT * FROM yo WHERE cartodb_id>=1000000 AND cartodb_id<1250000"
+tester "$result" "$expected"
+
+result=$(rangedquery 500000 1000001 250000 "SELECT * FROM yo")
+expected="SELECT * FROM yo WHERE cartodb_id>=500000 AND cartodb_id<750000
 SELECT * FROM yo WHERE cartodb_id>=750000 AND cartodb_id<1000000
 SELECT * FROM yo WHERE cartodb_id>=1000000 AND cartodb_id<1250000"
 tester "$result" "$expected"
@@ -83,3 +99,5 @@ https://wri-01.cartodb.com/api/v1/sql/?api_key=myapikey&q=SELECT%20%2A%20FROM%20
 https://wri-01.cartodb.com/api/v1/sql/?api_key=myapikey&q=SELECT%20%2A%20FROM%20yo%20WHERE%20id%3D1%20AND%20cartodb_id%3E%3D750000%20AND%20cartodb_id%3C1000000
 https://wri-01.cartodb.com/api/v1/sql/?api_key=myapikey&q=SELECT%20%2A%20FROM%20yo%20WHERE%20id%3D1%20AND%20cartodb_id%3E%3D1000000%20AND%20cartodb_id%3C1250000"
 tester "$result" "$expected"
+
+echo "Write test for exportqueries"
