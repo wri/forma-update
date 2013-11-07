@@ -44,13 +44,13 @@ Then, from your terminal:
 
 ```sql
 ALTER TABLE gfw2_forma RENAME TO gfw2_forma_bu;
-ALTER TABLE gfw2_forma_ew1 RENAME TO gfw2_forma;
+ALTER TABLE gfw2_forma_ew RENAME TO gfw2_forma;
 ```
 
 If something breaks and you need to switch things back, just run this:
 
 ```sql
-ALTER TABLE gfw2_forma RENAME TO gfw2_forma_ew1;
+ALTER TABLE gfw2_forma RENAME TO gfw2_forma_ew;
 ALTER TABLE gfw2_forma_bu RENAME TO gfw2_forma;
 ```
 
