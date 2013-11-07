@@ -3,7 +3,7 @@ forma-update
 
 This is a set of scripts to update the FORMA data on the GFW site.
 
-*** The big idea
+### The big idea
 
 Vizzuality figured out how to use data cubes to visualize detailed
 spatio-temporal data. This project takes FORMA data stored in a table
@@ -22,12 +22,12 @@ This project does the SQL jiu jitsu needed to transform the CDM into a
 data cube suitable for visualization. It is based on @andrewxhill's
 SQL statement magic.
 
-*** Setup
+### Setup
 
 1. API keys: we [look for](https://github.com/wri/forma-update/blob/master/formaupdate/runner.py#L23) `CARTODB_API_KEY` in your environment, so make sure it's available.
 2. Install dependencies: `sudo pip install -r requirements.txt`.
 
-*** Updating the table driving the FORMA data on the website
+### Updating the table driving the FORMA data on the website
 
 From the CartoDB web interface:
 
@@ -54,7 +54,7 @@ ALTER TABLE gfw2_forma RENAME TO gfw2_forma_ew1;
 ALTER TABLE gfw2_forma_bu RENAME TO gfw2_forma;
 ```
 
-*** Closing thoughts
+### Closing thoughts
 
 A full update takes a bit less than half an hour. Old data may still
 be cached until the website is redeployed. In the meantime, behavior
