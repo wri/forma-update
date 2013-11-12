@@ -7,10 +7,17 @@ import requests
 
 from utils import *
 
-TABLE = "gfw2_forma_ew1"
+# table containing data in common data model
+INITTABLE = "cdm_2013_11_08_clean"
+
+# temporary table during update process - MUST BE PUBLIC
+TABLE = "gfw2_forma_ew3"
+
 APIKEY = os.environ["CARTODB_API_KEY"]
+
+# head of API URL used for all queries
 BASEURL = "https://wri-01.cartodb.com/api/v2/sql?api_key=%s&q=" % APIKEY
-BASEURL += "%s"
+
 MAXZOOM = 17
 MINZOOM = 6
 STEPCOUNT = 10
@@ -58,7 +65,7 @@ def create_indexes(drop_query, create_query, table, base_url):
     queries = [drop_query % (table, f) for f in ["x", "y", "z"]]
     queries += [create_query % (table, f, f) for f in ["x", "y", "z"]]
 
-    return run_queries(BASEURL, queries)
+    return run_queries(base_url, queries)
 
 def run_z17(init_table, table, z):
 
@@ -106,14 +113,13 @@ def process_zoom(z):
 
 def main(z_min=MINZOOM, z_max=MAXZOOM):
     t = time.time()
-    init_table = "cdm_2013_10_24"
     responses = []
     
     # process data for z17
-    #responses += run_z17(init_table, TABLE, z_max)
+    responses += run_z17(INITTABLE, TABLE, z_max)
     
     # create indexes for table
-    #responses += create_indexes(DROPINDEX, CREATEINDEX, TABLE, BASEURL)
+    responses += create_indexes(DROPINDEX, CREATEINDEX, TABLE, BASEURL)
 
     # process data for zooms below 17
     for z in range(z_max - 1, z_min - 1, -1): # z17 already done

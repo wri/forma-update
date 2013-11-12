@@ -1,12 +1,13 @@
 import urllib
 import itertools
-import requests
 import math
 from simplejson.decoder import JSONDecodeError
 
+import requests
+
 def build_url(base_url, query):
     """Build full query URL, including URL-encoded query."""
-    return base_url % urllib.quote(query)
+    return "%s%s" % (base_url, urllib.quote(query))
 
 def parse_where(query):
     """If a query contains a WHERE clause, extend it with AND. If not, add
@@ -35,6 +36,7 @@ def restrict_all(min_id, max_id, step_size, min_z, max_z, query):
 
 def get_id(func, base_url, query, table):
     url = build_url(base_url, query % (func, table))
+
     r = requests.get(url)
 
     return r.json()["rows"][0][func]
