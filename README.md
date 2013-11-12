@@ -24,7 +24,7 @@ SQL statement magic.
 
 ### Setup
 
-1. API keys: we [look for](https://github.com/wri/forma-update/blob/master/formaupdate/runner.py#L23) `CARTODB_API_KEY` in your environment, so make sure it's available.
+1. API keys: we [look for](https://github.com/wri/forma-update/blob/a47d3220667f5a868c4a26e61b09cae15a2b1cc1/formaupdate/runner.py#L11) `CARTODB_API_KEY` in your environment, so make sure it's available.
 2. Install dependencies: `sudo pip install -r requirements.txt`.
 
 ### Updating the table driving the FORMA data on the website
