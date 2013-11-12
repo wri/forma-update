@@ -41,89 +41,22 @@ UPDATENULLSE17 = range_query(MAXZOOM, MAXZOOM + 1, UPDATENULLSE + " WHERE se is 
 DROPINDEX = "DROP INDEX IF EXISTS %s_%s_idx"
 CREATEINDEX = "CREATE INDEX %s_%s_idx ON gfw2_forma_ew (%s)"
 
-def gen_load_17_query(subq, query, input_table, minid, maxid, stepsize, z):
-    subq = subq % input_table
-    subqueries = gen_range_queries(minid, maxid, stepsize, subq, "cartodb_id")
-    return [query % (TABLE, z, q) for q in subqueries]
-
-def gen_update_null_queries(table, sd_query, se_query, minid, maxid, stepsize, z=None):
-
-    sd_query = sd_query % table
-    queries = gen_range_queries(minid, maxid, stepsize, sd_query, "cartodb_id")
-    
-    se_query = se_query % table
-    queries += gen_range_queries(minid, maxid, stepsize, se_query, "cartodb_id")
-    
-    if z:
-        queries = [range_query(z, z + 1, q, "z") for q in queries]
-    else:
-        pass
-
-    return queries
-
-def create_indexes(drop_query, create_query, table, base_url):
-    queries = [drop_query % (table, f) for f in ["x", "y", "z"]]
-    queries += [create_query % (table, f, f) for f in ["x", "y", "z"]]
-
-    return run_queries(base_url, queries)
-
-def run_z17(init_table, table, z):
-
-    # get range for init table
-    minid, maxid, stepsize = calc_range_params(BASEURL, STEPCOUNT, init_table)
-
-    # gen queries to load data into new table for z17
-    queries = gen_load_17_query(ZOOMSUBQUERY17, ZOOMQUERY, init_table,
-                                minid, maxid, stepsize, z)
-    # run queries
-    r = run_queries(BASEURL, queries)
-    
-    # get range for new table
-    minid, maxid, stepsize = calc_range_params(BASEURL, STEPCOUNT, table)
-    
-    # gen queries to update null values in new table for z17
-    # no need to specify zoom level, since there's only z17
-    queries = gen_update_null_queries(TABLE, UPDATENULLSD17,
-                                    UPDATENULLSE17, minid, maxid,
-                                    stepsize)
-
-    r += run_queries(BASEURL, queries)
-    return r
-
-def process_zoom(z):
-    r = []
-    print "\nRunning zoom %d\n" % z
-    minid, maxid, stepsize = calc_range_params(BASEURL, STEPCOUNT, TABLE)
-    
-    # subqueries = gen_range_queries(minid, maxid, stepsize, ZOOMSUBQUERY, "cartodb_id")
-    
-    # add data for zoom level
-    query = ZOOMQUERY % (TABLE, z, ZOOMSUBQUERY % (TABLE, z + 1))
-    r += run_query(BASEURL, query)
-
-    minid, maxid, stepsize = calc_range_params(BASEURL, STEPCOUNT, TABLE)
-    
-    # gen queries to update null values in table for zoom level
-    queries = gen_update_null_queries(TABLE, UPDATENULLSD,
-                                    UPDATENULLSE, minid, maxid,
-                                    stepsize, z)
-    r += run_queries(BASEURL, queries)
-
-    return r
-
 def main(z_min=MINZOOM, z_max=MAXZOOM):
     t = time.time()
     responses = []
     
     # process data for z17
-    responses += run_z17(INITTABLE, TABLE, z_max)
+    responses += run_z17(BASEURL, STEPCOUNT, INITTABLE, TABLE, z_max,
+                         ZOOMSUBQUERY17, ZOOMQUERY17, UPDATENULLSD17,
+                         UPDATENULLSE17)
     
     # create indexes for table
     responses += create_indexes(DROPINDEX, CREATEINDEX, TABLE, BASEURL)
 
     # process data for zooms below 17
     for z in range(z_max - 1, z_min - 1, -1): # z17 already done
-        process_zoom(z)
+        process_zoom(TABLE, z, BASEURL, STEPCOUNT, ZOOMSUBQUERY,
+                     ZOOMQUERY, UPDATENULLSD, UPDATENULLSE)
 
     print "\nElapsed time: %0.1f minutes" % ((time.time() - t) / 60)
     return responses
