@@ -35,6 +35,11 @@ From the CartoDB web interface:
 2. Create a table from the query, calling it gfw2_forma_ew (or the like).
 3. Delete the one record: `DELETE FROM gfw2_forma_ew`
 4. Make the table public - DO NOT FORGET TO DO THIS!
+5. Drop some ecoregions from the table and create a new table from the query.
+
+```sql
+SELECT * FROM cdm_latest WHERE ecoregion != 60122 AND ecoregion != 60147 AND ecoregion != 30109 AND ecoregion != 40134 AND ecoregion != 40150 AND ecoregion != 40131 AND ecoregion != 40136 AND ecoregion != 40126 AND ecoregion != 30130 AND ecoregion != 40141
+```
 
 Then, from your terminal:
 
