@@ -34,27 +34,40 @@ def restrict_all(min_id, max_id, step_size, min_z, max_z, query):
     
     return list(itertools.chain(*result)) # flatten list
 
-def get_id(func, base_url, query, table):
-    url = build_url(base_url, query % (func, table))
+def get_id(func, base_url, table):
+    """Get cartodb_id from table that corresponds to 'func' variable,
+    typically 'min' or 'max'."""
+
+    query = "SELECT %s(cartodb_id) FROM %s" % (func, table)
+
+    url = build_url(base_url, query)
 
     r = requests.get(url)
 
     return r.json()["rows"][0][func]
     
+def gen_step_size(min_id, max_id, step_count):
+    """Generate step size given min/max cartodb_id and desired number of
+    steps given in step_count."""
+    return int(math.floor((max_id - min_id) / step_count))
+
 def calc_range_params(base_url, step_count, table):
+    """Calculate range parameters for query based on min/max cartodb_id
+    values."""
     
     print "Calculating range parameters from cartodb_ids for table %s" % table
-    query = "SELECT %s(cartodb_id) FROM %s"
 
-    min_id = get_id("min", base_url, query, table)
-    max_id = get_id("max", base_url, query, table)
+    min_id = get_id("min", base_url, table)
+    max_id = get_id("max", base_url, table)
 
-    step_size = int(math.floor((max_id - min_id) / step_count))
+    step_size = gen_step_size(min_id, max_id, step_count)
     print "Min: %d\nMax: %d\nStep size: %d" % (min_id, max_id, step_size)
 
     return min_id, max_id, step_size
 
 def check_error(response):
+    """Parse error codes in query response and handle appropriately by
+    returning true for fatal error, false otherwise."""
     # in case of HTML-page error message
     try:
         s = response.text
@@ -120,7 +133,7 @@ def gen_update_null_queries(table, sd_query, se_query, minid, maxid, stepsize, z
 
 def create_indexes(drop_query, create_query, table, base_url):
     queries = [drop_query % (table, f) for f in ["x", "y", "z"]]
-    queries += [create_query % (table, f, f) for f in ["x", "y", "z"]]
+    queries += [create_query % (table, f, table, f) for f in ["x", "y", "z"]]
 
     return run_queries(table, base_url, queries)
 
@@ -165,4 +178,3 @@ def process_zoom(table, z, base_url, step_count, zoom_sub, zoom, update_sd, upda
     r += run_queries(table, base_url, queries)
 
     return r
-

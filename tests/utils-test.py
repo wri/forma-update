@@ -1,5 +1,5 @@
 import unittest
-from funcs import *
+from formaupdate.utils import *
 
 BASEURL = "https://wri-01.cartodb.com/api/v2/sql?q="
 SAMPLEQUERY = "SELECT * FROM table"
@@ -67,7 +67,14 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_get_id(self):
-        self.assertTrue(False)
+        result = [get_id(f, BASEURL, "test_forma_update") for f in ["min", "max"]]
+        expected = [1, 2]
+        self.assertEqual(result, expected)
+
+    def test_gen_step_size(self):
+        result = gen_step_size(10, 20, 2)
+        expected = 5
+        self.assertEqual(result, expected)
 
     def test_calc_range_params(self):
         self.assertTrue(False)

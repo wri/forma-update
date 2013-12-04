@@ -8,10 +8,10 @@ import requests
 from utils import *
 
 # table containing data in common data model
-INITTABLE = "cdm_2013_11_08_clean"
+INITTABLE = "cdm_latest"
 
 # temporary table during update process - MUST BE PUBLIC
-TABLE = "gfw2_forma_ew3"
+TABLE = "gfw2_forma_ew"
 
 APIKEY = os.environ["CARTODB_API_KEY"]
 
@@ -39,7 +39,7 @@ UPDATENULLSD17 = range_query(MAXZOOM, MAXZOOM + 1, UPDATENULLSD + " WHERE sd is 
 UPDATENULLSE17 = range_query(MAXZOOM, MAXZOOM + 1, UPDATENULLSE + " WHERE se is null", "z")
 
 DROPINDEX = "DROP INDEX IF EXISTS %s_%s_idx"
-CREATEINDEX = "CREATE INDEX %s_%s_idx ON gfw2_forma_ew (%s)"
+CREATEINDEX = "CREATE INDEX %s_%s_idx ON %s (%s)"
 
 def main(z_min=MINZOOM, z_max=MAXZOOM):
     t = time.time()
