@@ -1,7 +1,7 @@
 import unittest
-from funcs import *
+from formaupdate.utils import *
 
-BASEURL = "https://wri-01.cartodb.com/api/v2/sql?q=%s"
+BASEURL = "https://wri-01.cartodb.com/api/v2/sql?q="
 SAMPLEQUERY = "SELECT * FROM table"
 SAMPLEWHERE = "SELECT * FROM table WHERE id = 1"
 
@@ -10,8 +10,8 @@ class TestEverything(unittest.TestCase):
     def test_build_url(self):
         query = "SELECT count(*) FROM cdm_2013_10_24"
         result = build_url(BASEURL, query)
-        self.assertEqual(result, BASEURL %
-                         "SELECT%20count%28%2A%29%20FROM%20cdm_2013_10_24")
+        self.assertEqual(result, "%s%s" % (BASEURL,
+                        "SELECT%20count%28%2A%29%20FROM%20cdm_2013_10_24"))
 
     def test_parse_where(self):
         result = parse_where(SAMPLEQUERY)
@@ -65,3 +65,40 @@ class TestEverything(unittest.TestCase):
         # SELECT * FROM table WHERE cartodb_id >= 10 AND cartodb_id < 13 
         # AND z >= 15 AND z < 16
         self.assertEqual(result, expected)
+
+    def test_get_id(self):
+        result = [get_id(f, BASEURL, "test_forma_update") for f in ["min", "max"]]
+        expected = [1, 2]
+        self.assertEqual(result, expected)
+
+    def test_gen_step_size(self):
+        result = gen_step_size(10, 20, 2)
+        expected = 5
+        self.assertEqual(result, expected)
+
+    def test_calc_range_params(self):
+        self.assertTrue(False)
+
+    def test_check_error(self):
+        self.assertTrue(False)
+
+    def test_run_query(self):
+        self.assertTrue(False)
+
+    def test_run_queries(self):
+        self.assertTrue(False)
+
+    def test_gen_load_17_query(self):
+        self.assertTrue(False)
+
+    def test_gen_update_null_queries(self):
+        self.assertTrue(False)
+
+    def test_create_indexes(self):
+        self.assertTrue(False)
+
+    def test_run_z17(self):
+        self.assertTrue(False)
+
+    def test_process_zoom(self):
+        self.assertTrue(False)
