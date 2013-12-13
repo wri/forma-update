@@ -24,31 +24,40 @@ class TestEverything(unittest.TestCase):
         start, end = 10, 20
         query = SAMPLEQUERY
         result = range_query(start, end, query, "cartodb_id")
-        expected = "%s WHERE cartodb_id >= %d AND cartodb_id < %d" % (query, start, end)
+        expected = "%s WHERE cartodb_id::int >= %d AND cartodb_id::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
 
         query = SAMPLEWHERE
         result = range_query(start, end, query, "cartodb_id")
-        expected = "%s AND cartodb_id >= %d AND cartodb_id < %d" % (query, start, end)
+        expected = "%s AND cartodb_id::int >= %d AND cartodb_id::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
 
         result = range_query(start, end, query, "z")
-        expected = "%s AND z >= %d AND z < %d" % (query, start, end)
+        expected = "%s AND z::int >= %d AND z::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
 
     def test_gen_range_queries(self):
         start, end, step = 100000, 500000, 150000
         result = gen_range_queries(start, end, step, SAMPLEQUERY, "cartodb_id")
-        expected = ["SELECT * FROM table WHERE cartodb_id >= 100000 AND cartodb_id < 250000",
-        "SELECT * FROM table WHERE cartodb_id >= 250000 AND cartodb_id < 400000",
-        "SELECT * FROM table WHERE cartodb_id >= 400000 AND cartodb_id < 550000"]
+        expected = ["SELECT * FROM table WHERE cartodb_id::int >= 100000 AND cartodb_id::int < 250000",
+        "SELECT * FROM table WHERE cartodb_id::int >= 250000 AND cartodb_id::int < 400000",
+        "SELECT * FROM table WHERE cartodb_id::int >= 400000 AND cartodb_id::int < 550000"]
+        self.assertEqual(result, expected)
+
+    def test_gen_range_queries_myfield(self):
+        start, end, step = 100000, 500000, 150000
+        result = gen_range_queries(start, end, step, SAMPLEQUERY, "myfield")
+        expected = ["SELECT * FROM table WHERE myfield::int >= 100000 AND myfield::int < 250000",
+                    "SELECT * FROM table WHERE myfield::int >= 250000 AND myfield::int < 400000",
+                    "SELECT * FROM table WHERE myfield::int >= 400000 AND myfield::int < 550000"]
         self.assertEqual(result, expected)
 
     def test_restrict_all(self):
         minid, maxid, step_size, min_z, max_z = 10, 20, 3, 15, 17
-        result = restrict_all(minid, maxid, step_size, min_z, max_z, SAMPLEQUERY)
+        range_field = "cartodb_id"
+        result = restrict_all(minid, maxid, step_size, min_z, max_z, SAMPLEQUERY, range_field)
 
-        where_model = "WHERE cartodb_id >= %d AND cartodb_id < %d AND z >= %d AND z < %d"
+        where_model = "WHERE cartodb_id::int >= %d AND cartodb_id::int < %d AND z::int >= %d AND z::int < %d"
         expected = ["%s %s" % (SAMPLEQUERY, where_model % (10, 13, 15, 16)),
                     "%s %s" % (SAMPLEQUERY, where_model % (10, 13, 16, 17)),
                     "%s %s" % (SAMPLEQUERY, where_model % (10, 13, 17, 18)),
@@ -66,9 +75,13 @@ class TestEverything(unittest.TestCase):
         # AND z >= 15 AND z < 16
         self.assertEqual(result, expected)
 
-    def test_get_id(self):
-        result = [get_id(f, BASEURL, "test_forma_update") for f in ["min", "max"]]
-        expected = [1, 2]
+    def test_get_field_val(self):
+        result = [get_field_val(f, BASEURL, "test_forma_update", "cartodb_id") for f in ["min", "max"]]
+        expected = [1, 3]
+        self.assertEqual(result, expected)
+
+        result = [get_field_val(f, BASEURL, "test_forma_update", "x") for f in ["min", "max"]]
+        expected = [0, 1]
         self.assertEqual(result, expected)
 
     def test_gen_step_size(self):

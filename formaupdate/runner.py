@@ -18,7 +18,8 @@ APIKEY = os.environ["CARTODB_API_KEY"]
 # head of API URL used for all queries
 BASEURL = "https://wri-01.cartodb.com/api/v2/sql?api_key=%s&q=" % APIKEY
 
-MAXZOOM = 17
+RANGEFIELD = 'x'
+MAXZOOM = 16
 MINZOOM = 6
 STEPCOUNT = 10
 
@@ -48,7 +49,7 @@ def main(z_min=MINZOOM, z_max=MAXZOOM):
     # process data for z17
     responses += run_z17(BASEURL, STEPCOUNT, INITTABLE, TABLE, z_max,
                          ZOOMSUBQUERY17, ZOOMQUERY17, UPDATENULLSD17,
-                         UPDATENULLSE17)
+                         UPDATENULLSE17, RANGEFIELD)
     
     # create indexes for table
     responses += create_indexes(DROPINDEX, CREATEINDEX, TABLE, BASEURL)
@@ -56,7 +57,7 @@ def main(z_min=MINZOOM, z_max=MAXZOOM):
     # process data for zooms below 17
     for z in range(z_max - 1, z_min - 1, -1): # z17 already done
         process_zoom(TABLE, z, BASEURL, STEPCOUNT, ZOOMSUBQUERY,
-                     ZOOMQUERY, UPDATENULLSD, UPDATENULLSE)
+                     ZOOMQUERY, UPDATENULLSD, UPDATENULLSE, RANGEFIELD)
 
     print "\nElapsed time: %0.1f minutes" % ((time.time() - t) / 60)
     return responses
