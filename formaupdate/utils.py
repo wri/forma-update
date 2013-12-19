@@ -17,48 +17,49 @@ def parse_where(query):
     else:
         return "%s AND" % (query)
 
-def range_query(start, end, query, range_type="cartodb_id"):
+def range_query(start, end, query, range_field):
     """Make a range query by using/extending a WHERE clause."""
     q = parse_where(query)
-    return "%s %s >= %d AND %s < %d" % (q, range_type, start, range_type, end)
+    return "%s %s::int >= %d AND %s::int < %d" % (q, range_field, start, range_field, end)
 
-def gen_range_queries(start, end, step, query, range_type="cartodb_id"):
+def gen_range_queries(start, end, step, query, range_field):
     """Generate range queries from range parameters."""
-    return [range_query(i, i + step, query, range_type) for i in range(start, end, step)]
+    return [range_query(i, i + step, query, range_field) for i in range(start, end, step)]
 
-def restrict_all(min_id, max_id, step_size, min_z, max_z, query):
-    """Restrict a query to cartodb_ids and zoom levels."""
-
-    restricted_ids = gen_range_queries(min_id, max_id + 1, step_size, query, "cartodb_id")
-    result = [gen_range_queries(min_z, max_z + 1, 1, query, "z") for query in restricted_ids]
+def restrict_all(min_val, max_val, step_size, min_z, max_z, query, range_field):
+    """Restrict a query to field range and zoom levels."""
+    zoom_field = 'z'
+    restricted_ids = gen_range_queries(min_val, max_val + 1, step_size, query, range_field)
+    result = [gen_range_queries(min_z, max_z + 1, 1, query, zoom_field) for query in restricted_ids]
     
     return list(itertools.chain(*result)) # flatten list
 
-def get_id(func, base_url, table):
-    """Get cartodb_id from table that corresponds to 'func' variable,
-    typically 'min' or 'max'."""
+def get_field_val(func, base_url, table, field):
+    """Get value from table that corresponds to 'func' variable,
+    typically 'min' or 'max', for given field."""
 
-    query = "SELECT %s(cartodb_id) FROM %s" % (func, table)
+    query = "SELECT %s(%s) FROM %s" % (func, field, table)
 
     url = build_url(base_url, query)
 
     r = requests.get(url)
 
-    return r.json()["rows"][0][func]
+    return int(r.json()["rows"][0][func])
     
 def gen_step_size(min_id, max_id, step_count):
     """Generate step size given min/max cartodb_id and desired number of
     steps given in step_count."""
     return int(math.floor((max_id - min_id) / step_count))
 
-def calc_range_params(base_url, step_count, table):
-    """Calculate range parameters for query based on min/max cartodb_id
-    values."""
+def calc_range_params(base_url, step_count, table, range_field='cartodb_id'):
+    """Calculate range parameters for query based on min/max field values.
+    Defaults to 'cartodb_id'."""
     
-    print "Calculating range parameters from cartodb_ids for table %s" % table
+    print "\nCalculating range parameters from field '%s' for table %s" % (
+        range_field, table)
 
-    min_id = get_id("min", base_url, table)
-    max_id = get_id("max", base_url, table)
+    min_id = get_field_val("min", base_url, table, range_field)
+    max_id = get_field_val("max", base_url, table, range_field)
 
     step_size = gen_step_size(min_id, max_id, step_count)
     print "Min: %d\nMax: %d\nStep size: %d" % (min_id, max_id, step_size)
@@ -111,18 +112,20 @@ def run_query(base_url, query):
 def run_queries(table, base_url, queries):
     return [run_query(base_url, q) for q in queries]
 
-def gen_load_17_query(subq, query, input_table, table, minid, maxid, stepsize, z):
+def gen_load_17_query(subq, query, input_table, table, minid, maxid, stepsize, z,
+   range_field):
     subq = subq % input_table
-    subqueries = gen_range_queries(minid, maxid, stepsize, subq, "cartodb_id")
+    subqueries = gen_range_queries(minid, maxid, stepsize, subq, range_field)
     return [query % (table, z, q) for q in subqueries]
 
-def gen_update_null_queries(table, sd_query, se_query, minid, maxid, stepsize, z=None):
+def gen_update_null_queries(table, sd_query, se_query, minid, maxid, stepsize, z=None,
+    range_field=None):
 
     sd_query = sd_query % table
-    queries = gen_range_queries(minid, maxid, stepsize, sd_query, "cartodb_id")
+    queries = gen_range_queries(minid, maxid, stepsize, sd_query, range_field)
     
     se_query = se_query % table
-    queries += gen_range_queries(minid, maxid, stepsize, se_query, "cartodb_id")
+    queries += gen_range_queries(minid, maxid, stepsize, se_query, range_field)
     
     if z:
         queries = [range_query(z, z + 1, q, "z") for q in queries]
@@ -137,44 +140,46 @@ def create_indexes(drop_query, create_query, table, base_url):
 
     return run_queries(table, base_url, queries)
 
-def run_z17(base_url, step_count, init_table, table, z, zoom_sub, zoom, sd_query, se_query):
+def run_z17(base_url, step_count, init_table, table, z, zoom_sub, zoom, 
+    sd_query, se_query, range_field):
 
     # get range for init table
-    minid, maxid, stepsize = calc_range_params(base_url, step_count, init_table)
+    minid, maxid, stepsize = calc_range_params(base_url, step_count, init_table,
+       range_field)
 
     # gen queries to load data into new table for z17
     queries = gen_load_17_query(zoom_sub, zoom, init_table, table,
-                                minid, maxid, stepsize, z)
+                                minid, maxid, stepsize, z, range_field)
     # run queries
     r = run_queries(table, base_url, queries)
     
     # get range for new table
-    minid, maxid, stepsize = calc_range_params(base_url, step_count, table)
+    minid, maxid, stepsize = calc_range_params(base_url, step_count, table,
+        range_field)
     
     # gen queries to update null values in new table for z17
     # no need to specify zoom level, since there's only z17
-    queries = gen_update_null_queries(table, sd_query, se_query,
-                                      minid, maxid, stepsize)
+    queries = gen_update_null_queries(table, sd_query, se_query, minid, maxid,
+       stepsize, range_field=range_field)
 
     r += run_queries(table, base_url, queries)
+
     return r
 
-def process_zoom(table, z, base_url, step_count, zoom_sub, zoom, update_sd, update_se):
+def process_zoom(table, z, base_url, step_count, zoom_sub, zoom, update_sd, 
+    update_se, range_field):
     r = []
     print "\nRunning zoom %d\n" % z
-    minid, maxid, stepsize = calc_range_params(base_url, step_count, table)
-    
-    # subqueries = gen_range_queries(minid, maxid, stepsize, ZOOMSUBQUERY, "cartodb_id")
-    
+
     # add data for zoom level
     query = zoom % (table, z, zoom_sub % (table, z + 1))
     r += run_query(base_url, query)
 
-    minid, maxid, stepsize = calc_range_params(base_url, step_count, table)
+    minid, maxid, stepsize = calc_range_params(base_url, step_count, table, range_field)
     
     # gen queries to update null values in table for zoom level
-    queries = gen_update_null_queries(table, update_sd, update_se,
-                                      minid, maxid, stepsize, z)
+    queries = gen_update_null_queries(table, update_sd, update_se, minid, 
+        maxid, stepsize, z, range_field)
     r += run_queries(table, base_url, queries)
 
     return r
