@@ -77,11 +77,11 @@ class TestEverything(unittest.TestCase):
 
     def test_get_field_val(self):
         result = [get_field_val(f, BASEURL, "test_forma_update", "cartodb_id") for f in ["min", "max"]]
-        expected = [1, 3]
+        expected = [22328022, 22328026]
         self.assertEqual(result, expected)
 
         result = [get_field_val(f, BASEURL, "test_forma_update", "x") for f in ["min", "max"]]
-        expected = [0, 1]
+        expected = [2399, 6590]
         self.assertEqual(result, expected)
 
     def test_gen_step_size(self):
@@ -112,6 +112,49 @@ class TestEverything(unittest.TestCase):
 
     def test_run_z17(self):
         self.assertTrue(False)
+
+    def test_count_ok(self):
+        table = 'test_forma_update'
+
+        self.assertFalse(count_ok(16, table, BASEURL))
+        self.assertTrue(count_ok(15, table, BASEURL))
+        self.assertTrue(count_ok(14, table, BASEURL))
+
+    def test_nulls_ok(self):
+        table = 'test_forma_update'
+
+        result = nulls_ok(15, 'se', table, BASEURL)
+        self.assertTrue(result)
+
+        result = nulls_ok(15, 'sd', table, BASEURL)
+        self.assertFalse(result)
+
+        result = nulls_ok(14, 'se', table, BASEURL)
+        self.assertFalse(result)
+
+        result = nulls_ok(14, 'sd', table, BASEURL)
+        self.assertTrue(result)
+
+        result = nulls_ok(13, 'se', table, BASEURL)
+        self.assertTrue(result)
+
+        result = nulls_ok(13, 'sd', table, BASEURL)
+        self.assertTrue(result)
+        
+    def test_zoom_ok(self):
+        table = 'test_forma_update'
+
+        # all good data
+        result = zoom_ok(13, table, BASEURL)
+        self.assertTrue(result)
+
+        # has null se
+        with self.assertRaises(Exception):
+            zoom_ok(14, table, BASEURL)
+
+        # has null sd
+        with self.assertRaises(Exception):
+            zoom_ok(15, table, BASEURL)
 
     def test_process_zoom(self):
         self.assertTrue(False)
