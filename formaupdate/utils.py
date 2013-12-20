@@ -36,16 +36,17 @@ def restrict_all(min_val, max_val, step_size, min_z, max_z, query, range_field):
 
 def get_field_val(func, base_url, table, field):
     """Get value from table that corresponds to 'func' variable,
-    typically 'min' or 'max', for given field."""
+    typically 'min' or 'max', for given field. Assumes the field of
+    interest is numeric."""
 
-    query = "SELECT %s(%s) FROM %s" % (func, field, table)
+    query = "SELECT %s(%s::int) FROM %s" % (func, field, table)
 
     url = build_url(base_url, query)
 
     r = requests.get(url)
 
     return int(r.json()["rows"][0][func])
-    
+
 def gen_step_size(min_id, max_id, step_count):
     """Generate step size given min/max cartodb_id and desired number of
     steps given in step_count."""
@@ -117,11 +118,12 @@ def run_queries(table, base_url, queries):
 def gen_load_17_query(subq, query, input_table, table, minid, maxid,
                       stepsize, z, range_field):
     subq = subq % input_table
-    subqueries = gen_range_queries(minid, maxid, stepsize, subq, range_field)
+    subqueries = gen_range_queries(minid, maxid, stepsize, subq,
+                                   range_field)
     return [query % (table, z, q) for q in subqueries]
 
-def gen_update_null_queries(table, query, minid, maxid,
-                            stepsize, z, range_field=None):
+def gen_update_null_queries(table, query, minid, maxid, stepsize, z,
+                            range_field=None):
 
     queries = gen_range_queries(minid, maxid, stepsize, query % table,
                                 range_field)
@@ -132,19 +134,19 @@ def gen_update_null_queries(table, query, minid, maxid,
     return queries
 
 def gen_drop_index_queries(drop_index_query, table):
-    return [drop_index_query % (table, field) for field in ["x", "y", "z"]]
+    return [drop_index_query % (table, field) for field in
+            ["x", "y", "z"]]
 
 def gen_create_index_queries(index_query, table):
-    return [index_query % (table, field, table, field) for field in ["x", "y", "z"]]
-
-    return queries
+    return [index_query % (table, field, table, field) for field in
+            ["x", "y", "z"]]
 
 def count_ok(z, table, base_url):
     count_query = 'SELECT z, count(z) FROM %s WHERE z = %i GROUP BY z'
     count_query =  count_query % (table, z)
 
     r = run_query(base_url, count_query)
-    print r.json()
+
     if r.json()['total_rows'] == 0:
         return False
     else:
@@ -180,4 +182,5 @@ def zoom_ok(z, table, base_url):
         raise Exception(msg)
 
     else:
+        print "Zoom %d looks ok" % z
         return True

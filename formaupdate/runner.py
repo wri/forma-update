@@ -19,7 +19,7 @@ APIKEY = os.environ["CARTODB_API_KEY"]
 BASEURL = "https://wri-01.cartodb.com/api/v2/sql?api_key=%s&q=" % APIKEY
 
 RANGEFIELD = 'x'
-MAXZOOM = 16
+MAXZOOM = 17
 MINZOOM = 6
 STEPCOUNT = 10
 
@@ -55,53 +55,62 @@ def run_z17(base_url, step_count, init_table, table, z, zoom_sub,
     # get range for init table
     minid, maxid, stepsize = calc_range_params(base_url, step_count,
                                                init_table, range_field)
-
     # gen queries to load data into new table for z17
     queries = gen_load_17_query(zoom_sub, zoom, init_table, table,
                                 minid, maxid, stepsize, z,
                                 range_field)
 
+    results = []
+
     # run queries
-    r = run_queries(table, base_url, queries)
+    results = run_queries(table, base_url, queries)
 
     # get range for new table
     minid, maxid, stepsize = calc_range_params(base_url, step_count,
                                                table, range_field)
 
     # gen queries to update null values in new table for z17
-    # no need to specify zoom level, since there's only z17
-    queries = gen_update_null_queries(table, sd_query, se_query,
-                                      minid, maxid, stepsize,
+    queries = gen_update_null_queries(table, UPDATENULLSD17, minid,
+                                      maxid, stepsize, z,
                                       range_field=range_field)
 
-    r += run_queries(table, base_url, queries)
+    queries += gen_update_null_queries(table, UPDATENULLSE17, minid,
+                                       maxid, stepsize, z,
+                                       range_field=range_field)
 
-    return r
+    results += run_queries(table, base_url, queries)
+
+    return results
 
 def process_zoom(table, z, base_url, step_count, zoom_sub, zoom,
                  update_sd, update_se, range_field):
-    r = []
+    results = []
     print "\nRunning zoom %d\n" % z
 
     # add data for zoom level
     query = zoom % (table, z, zoom_sub % (table, z + 1))
-    r += run_query(base_url, query)
+    results += run_query(base_url, query)
 
     minid, maxid, stepsize = calc_range_params(base_url, step_count,
                                                table, range_field)
 
     # gen queries to update null values in table for zoom level
-    queries = gen_update_null_queries(table, update_sd, update_se,
+    queries = gen_update_null_queries(table, UPDATENULLSE,
                                       minid, maxid, stepsize, z,
                                       range_field)
-    r += run_queries(table, base_url, queries)
+
+    queries += gen_update_null_queries(table, UPDATENULLSD,
+                                      minid, maxid, stepsize, z,
+                                      range_field)
+
+    results += run_queries(table, base_url, queries)
 
     # check that a given zoom level has some rows, no nulls in sd/se fields
     # if any checks fail, an exception will be raised.
     if zoom_ok(z, table, base_url):
-        return r
+        return results
 
-def main(z_min=MINZOOM, z_max=MAXZOOM):
+def main(input_table=INITTABLE, output_table=TABLE, z_min=MINZOOM, z_max=MAXZOOM):
     t = time.time()
     responses = []
     
