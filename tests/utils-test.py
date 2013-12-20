@@ -17,6 +17,7 @@ class TestEverything(unittest.TestCase):
         result = parse_where(SAMPLEQUERY)
         self.assertEqual(result, "%s WHERE" % SAMPLEQUERY )
 
+    def test_parse_where1(self):
         result = parse_where(SAMPLEWHERE)
         self.assertEqual(result, "%s AND" % SAMPLEWHERE)
 
@@ -27,11 +28,16 @@ class TestEverything(unittest.TestCase):
         expected = "%s WHERE cartodb_id::int >= %d AND cartodb_id::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
 
+    def test_range_query1(self):
+        start, end = 10, 20
         query = SAMPLEWHERE
         result = range_query(start, end, query, "cartodb_id")
         expected = "%s AND cartodb_id::int >= %d AND cartodb_id::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
 
+    def test_range_query2(self):
+        start, end = 10, 20
+        query = SAMPLEWHERE
         result = range_query(start, end, query, "z")
         expected = "%s AND z::int >= %d AND z::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
@@ -80,6 +86,7 @@ class TestEverything(unittest.TestCase):
         expected = [22328022, 22328026]
         self.assertEqual(result, expected)
 
+    def test_get_field_val1(self):
         result = [get_field_val(f, BASEURL, "test_forma_update", "x") for f in ["min", "max"]]
         expected = [2399, 6590]
         self.assertEqual(result, expected)
@@ -90,10 +97,60 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_calc_range_params(self):
-        self.assertTrue(False)
+        table = 'test_forma_update'
+        step_count = 2
+
+        # check default field - cartodb_id
+        result = calc_range_params(BASEURL, step_count, table)
+        expected = [22328022, 22328026, 2]
+        self.assertEqual(result, expected)
+
+    def test_calc_range_params1(self):
+        table = 'test_forma_update'
+        step_count = 2
+
+        # check another field - x
+        range_field = 'x'
+        result = calc_range_params(BASEURL, step_count, table, range_field)
+        expected = [2399, 6590, 2095]
+        self.assertEqual(result, expected)
 
     def test_check_error(self):
-        self.assertTrue(False)
+        table = "test_forma_update"
+        query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
+
+        # field exists - no error
+        q = query % (table, "z")
+        response = run_query(BASEURL, q)
+
+        result = check_error(response)
+        expected = False
+
+        self.assertEqual(result, expected)
+
+    def test_check_error2(self):
+        table = "test_forma_update"
+        query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
+
+        # field does not exist - should result in an error
+        q = query % (table, "zzzzzzz")
+        response = run_query(BASEURL, q)
+
+        result = check_error(response)
+        expected = True
+
+        self.assertEqual(result, expected)
+
+    def test_check_error3(self):
+        table = "test_forma_update"
+        query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
+
+        # test varnish error check, and JSONDecodeError
+        response = '503 varnish'
+        result = check_error(response)
+        expected = False # Varnish error is not necessarily an indicator of failure
+
+        self.assertEqual(result, expected)
 
     def test_run_query(self):
         self.assertTrue(False)
@@ -117,7 +174,15 @@ class TestEverything(unittest.TestCase):
         table = 'test_forma_update'
 
         self.assertFalse(count_ok(16, table, BASEURL))
+
+    def test_count_ok1(self):
+        table = 'test_forma_update'
+
         self.assertTrue(count_ok(15, table, BASEURL))
+
+    def test_count_ok2(self):
+        table = 'test_forma_update'
+
         self.assertTrue(count_ok(14, table, BASEURL))
 
     def test_nulls_ok(self):
@@ -126,17 +191,32 @@ class TestEverything(unittest.TestCase):
         result = nulls_ok(15, 'se', table, BASEURL)
         self.assertTrue(result)
 
+    def test_nulls_ok1(self):
+        table = 'test_forma_update'
+
         result = nulls_ok(15, 'sd', table, BASEURL)
         self.assertFalse(result)
+
+    def test_nulls_ok2(self):
+        table = 'test_forma_update'
 
         result = nulls_ok(14, 'se', table, BASEURL)
         self.assertFalse(result)
 
+    def test_nulls_ok3(self):
+        table = 'test_forma_update'
+
         result = nulls_ok(14, 'sd', table, BASEURL)
         self.assertTrue(result)
 
+    def test_nulls_ok4(self):
+        table = 'test_forma_update'
+
         result = nulls_ok(13, 'se', table, BASEURL)
         self.assertTrue(result)
+
+    def test_nulls_ok5(self):
+        table = 'test_forma_update'
 
         result = nulls_ok(13, 'sd', table, BASEURL)
         self.assertTrue(result)
@@ -148,9 +228,15 @@ class TestEverything(unittest.TestCase):
         result = zoom_ok(13, table, BASEURL)
         self.assertTrue(result)
 
+    def test_zoom_ok1(self):
+        table = 'test_forma_update'
+
         # has null se
         with self.assertRaises(Exception):
             zoom_ok(14, table, BASEURL)
+
+    def test_zoom_ok2(self):
+        table = 'test_forma_update'
 
         # has null sd
         with self.assertRaises(Exception):
