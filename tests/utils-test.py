@@ -1,5 +1,6 @@
 import unittest
 from formaupdate.utils import *
+from formaupdate import runner
 
 BASEURL = "https://wri-01.cartodb.com/api/v2/sql?q="
 SAMPLEQUERY = "SELECT * FROM table"
@@ -151,22 +152,103 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_run_query(self):
-        self.assertTrue(False)
+        query = "SELECT x FROM %s LIMIT 1" % self.table
+        result = run_query(BASEURL, query)
+        result = result.json().keys()
+        expected = [u'fields', u'rows', u'total_rows', u'time']
+
+        self.assertEqual(result, expected)
+
+    def test_run_query1(self):
+        # force query to fail
+        query = "SELECT bad_field FROM %s LIMIT 1" % self.table
+        result = run_query(BASEURL, query)
+        result = result.json()
+        expected = {u'error': [u'column "bad_field" does not exist']}
+
+        self.assertEqual(result, expected)
 
     def test_run_queries(self):
-        self.assertTrue(False)
+        query = "SELECT x FROM %s LIMIT 1" % self.table
+        result = run_queries(self.table, BASEURL, [query, query])
+        result = [r.json().keys() for r in result]
+        expected = [[u'fields', u'rows', u'total_rows', u'time'],
+                    [u'fields', u'rows', u'total_rows', u'time']]
+
+        self.assertEqual(result, expected)
 
     def test_gen_load_17_query(self):
-        self.assertTrue(False)
+        query = runner.ZOOMQUERY17
+        sub_query = runner.ZOOMSUBQUERY17
+        input_table = 'cdm_latest'
+        table = 'gfw2_forma_ew'
+        minid = 10
+        maxid = 20
+        stepsize = 5
+        z = 17
+        range_field = 'x'
 
-    def test_gen_update_null_queries(self):
-        self.assertTrue(False)
+        result = gen_load_17_query(sub_query, query, input_table,
+                                   table, minid, maxid, stepsize, z, range_field)
+        expected = ['INSERT INTO gfw2_forma_ew (x,y,date_array,z,iso) (SELECT x, y, array_agg(undate) as date_array, 17 as z,array_agg(iso) as iso FROM (SELECT x::int, y::int, p::int AS undate,iso FROM cdm_latest WHERE x::int >= 10 AND x::int < 15) foo GROUP BY x,y)',
+                    'INSERT INTO gfw2_forma_ew (x,y,date_array,z,iso) (SELECT x, y, array_agg(undate) as date_array, 17 as z,array_agg(iso) as iso FROM (SELECT x::int, y::int, p::int AS undate,iso FROM cdm_latest WHERE x::int >= 15 AND x::int < 20) foo GROUP BY x,y)']
+        self.assertEqual(result, expected)
 
-    def test_create_indexes(self):
-        self.assertTrue(False)
+    def test_gen_update_null_queries_sd(self):
+        # test for sd field
+        table = 'gfw2_forma_ew'
+        minid = 10
+        maxid = 20
+        stepsize = 5
+        z = 13
+        range_field = 'x'
+        query = runner.UPDATENULLSD
 
-    def test_run_z17(self):
-        self.assertTrue(False)
+        result = gen_update_null_queries(table, query, minid, maxid,
+                                         stepsize, z, range_field)
+        expected = ['UPDATE gfw2_forma_ew SET sd = ARRAY(SELECT DISTINCT UNNEST(date_array) ORDER BY 1) WHERE x::int >= 10 AND x::int < 15 AND z::int >= 13 AND z::int < 14',
+                    'UPDATE gfw2_forma_ew SET sd = ARRAY(SELECT DISTINCT UNNEST(date_array) ORDER BY 1) WHERE x::int >= 15 AND x::int < 20 AND z::int >= 13 AND z::int < 14'] 
+
+        self.assertEqual(result, expected)
+
+    def test_gen_update_null_queries_se(self):
+        # test for se field
+        table = 'gfw2_forma_ew'
+        minid = 10
+        maxid = 20
+        stepsize = 5
+        z = 13
+        range_field = 'x'
+        query = runner.UPDATENULLSE
+
+        result = gen_update_null_queries(table, query, minid, maxid,
+                                         stepsize, z, range_field)
+        expected = ['UPDATE gfw2_forma_ew SET se = ARRAY(SELECT count(*) FROM UNNEST(date_array) d GROUP BY d ORDER BY d) WHERE x::int >= 10 AND x::int < 15 AND z::int >= 13 AND z::int < 14',
+                    'UPDATE gfw2_forma_ew SET se = ARRAY(SELECT count(*) FROM UNNEST(date_array) d GROUP BY d ORDER BY d) WHERE x::int >= 15 AND x::int < 20 AND z::int >= 13 AND z::int < 14']
+
+        self.assertEqual(result, expected)
+
+    def test_gen_drop_index_queries(self):
+        query = runner.DROPINDEX
+        table = 'gfw2_forma_ew'
+
+        result = gen_drop_index_queries(query, table)
+        expected = [query % (table, 'x'),
+                    query % (table, 'y'),
+                    query % (table, 'z')]
+
+        self.assertEqual(result, expected)
+
+    def test_gen_create_index_queries(self):
+        query = runner.CREATEINDEX
+        table = 'gfw2_forma_ew'
+
+        result = gen_create_index_queries(query, table)
+        expected = [query % (table, 'x', table, 'x'),
+                    query % (table, 'y', table,  'y'),
+                    query % (table, 'z', table, 'z')]
+
+        self.assertEqual(result, expected)
 
     def test_count_ok(self):
         self.assertFalse(count_ok(16, self.table, BASEURL))
@@ -215,6 +297,3 @@ class TestEverything(unittest.TestCase):
         # has null sd
         with self.assertRaises(Exception):
             zoom_ok(15, self.table, BASEURL)
-
-    def test_process_zoom(self):
-        self.assertTrue(False)
