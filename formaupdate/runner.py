@@ -42,11 +42,70 @@ UPDATENULLSE17 = range_query(MAXZOOM, MAXZOOM + 1, UPDATENULLSE + " WHERE se is 
 DROPINDEX = "DROP INDEX IF EXISTS %s_%s_idx"
 CREATEINDEX = "CREATE INDEX %s_%s_idx ON %s (%s)"
 
+def create_indexes(drop_query, create_query, table, base_url):
+
+    queries = gen_drop_index_queries(drop_query, table)
+    queries += gen_create_index_queries(create_query, table)
+
+    return run_queries(table, base_url, queries)
+
+def run_z17(base_url, step_count, init_table, table, z, zoom_sub,
+            zoom, sd_query, se_query, range_field):
+
+    # get range for init table
+    minid, maxid, stepsize = calc_range_params(base_url, step_count,
+                                               init_table, range_field)
+
+    # gen queries to load data into new table for z17
+    queries = gen_load_17_query(zoom_sub, zoom, init_table, table,
+                                minid, maxid, stepsize, z,
+                                range_field)
+
+    # run queries
+    r = run_queries(table, base_url, queries)
+
+    # get range for new table
+    minid, maxid, stepsize = calc_range_params(base_url, step_count,
+                                               table, range_field)
+
+    # gen queries to update null values in new table for z17
+    # no need to specify zoom level, since there's only z17
+    queries = gen_update_null_queries(table, sd_query, se_query,
+                                      minid, maxid, stepsize,
+                                      range_field=range_field)
+
+    r += run_queries(table, base_url, queries)
+
+    return r
+
+def process_zoom(table, z, base_url, step_count, zoom_sub, zoom,
+                 update_sd, update_se, range_field):
+    r = []
+    print "\nRunning zoom %d\n" % z
+
+    # add data for zoom level
+    query = zoom % (table, z, zoom_sub % (table, z + 1))
+    r += run_query(base_url, query)
+
+    minid, maxid, stepsize = calc_range_params(base_url, step_count,
+                                               table, range_field)
+
+    # gen queries to update null values in table for zoom level
+    queries = gen_update_null_queries(table, update_sd, update_se,
+                                      minid, maxid, stepsize, z,
+                                      range_field)
+    r += run_queries(table, base_url, queries)
+
+    # check that a given zoom level has some rows, no nulls in sd/se fields
+    # if any checks fail, an exception will be raised.
+    if zoom_ok(z, table, base_url):
+        return r
+
 def main(z_min=MINZOOM, z_max=MAXZOOM):
     t = time.time()
     responses = []
     
-    # process data for z17
+    # load and update data for z17
     responses += run_z17(BASEURL, STEPCOUNT, INITTABLE, TABLE, z_max,
                          ZOOMSUBQUERY17, ZOOMQUERY17, UPDATENULLSD17,
                          UPDATENULLSE17, RANGEFIELD)
@@ -57,7 +116,8 @@ def main(z_min=MINZOOM, z_max=MAXZOOM):
     # process data for zooms below 17
     for z in range(z_max - 1, z_min - 1, -1): # z17 already done
         process_zoom(TABLE, z, BASEURL, STEPCOUNT, ZOOMSUBQUERY,
-                     ZOOMQUERY, UPDATENULLSD, UPDATENULLSE, RANGEFIELD)
+                     ZOOMQUERY, UPDATENULLSD, UPDATENULLSE,
+                     RANGEFIELD)
 
     print "\nElapsed time: %0.1f minutes" % ((time.time() - t) / 60)
     return responses

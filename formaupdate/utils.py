@@ -114,59 +114,30 @@ def run_query(base_url, query):
 def run_queries(table, base_url, queries):
     return [run_query(base_url, q) for q in queries]
 
-def gen_load_17_query(subq, query, input_table, table, minid, maxid, stepsize, z,
-   range_field):
+def gen_load_17_query(subq, query, input_table, table, minid, maxid,
+                      stepsize, z, range_field):
     subq = subq % input_table
     subqueries = gen_range_queries(minid, maxid, stepsize, subq, range_field)
     return [query % (table, z, q) for q in subqueries]
 
-def gen_update_null_queries(table, sd_query, se_query, minid, maxid, stepsize, z=None,
-    range_field=None):
+def gen_update_null_queries(table, query, minid, maxid,
+                            stepsize, z, range_field=None):
 
-    sd_query = sd_query % table
-    queries = gen_range_queries(minid, maxid, stepsize, sd_query, range_field)
+    queries = gen_range_queries(minid, maxid, stepsize, query % table,
+                                range_field)
     
-    se_query = se_query % table
-    queries += gen_range_queries(minid, maxid, stepsize, se_query, range_field)
-    
-    if z:
-        queries = [range_query(z, z + 1, q, "z") for q in queries]
-    else:
-        pass
+    # restrict to the specific zoom level
+    queries = [range_query(z, z + 1, q, "z") for q in queries]
 
     return queries
 
-def create_indexes(drop_query, create_query, table, base_url):
-    queries = [drop_query % (table, f) for f in ["x", "y", "z"]]
-    queries += [create_query % (table, f, table, f) for f in ["x", "y", "z"]]
+def gen_drop_index_queries(drop_index_query, table):
+    return [drop_index_query % (table, field) for field in ["x", "y", "z"]]
 
-    return run_queries(table, base_url, queries)
+def gen_create_index_queries(index_query, table):
+    return [index_query % (table, field, table, field) for field in ["x", "y", "z"]]
 
-def run_z17(base_url, step_count, init_table, table, z, zoom_sub, zoom, 
-    sd_query, se_query, range_field):
-
-    # get range for init table
-    minid, maxid, stepsize = calc_range_params(base_url, step_count, init_table,
-       range_field)
-
-    # gen queries to load data into new table for z17
-    queries = gen_load_17_query(zoom_sub, zoom, init_table, table,
-                                minid, maxid, stepsize, z, range_field)
-    # run queries
-    r = run_queries(table, base_url, queries)
-    
-    # get range for new table
-    minid, maxid, stepsize = calc_range_params(base_url, step_count, table,
-        range_field)
-    
-    # gen queries to update null values in new table for z17
-    # no need to specify zoom level, since there's only z17
-    queries = gen_update_null_queries(table, sd_query, se_query, minid, maxid,
-       stepsize, range_field=range_field)
-
-    r += run_queries(table, base_url, queries)
-
-    return r
+    return queries
 
 def count_ok(z, table, base_url):
     count_query = 'SELECT z, count(z) FROM %s WHERE z = %i GROUP BY z'
@@ -210,24 +181,3 @@ def zoom_ok(z, table, base_url):
 
     else:
         return True
-
-def process_zoom(table, z, base_url, step_count, zoom_sub, zoom, update_sd, 
-    update_se, range_field):
-    r = []
-    print "\nRunning zoom %d\n" % z
-
-    # add data for zoom level
-    query = zoom % (table, z, zoom_sub % (table, z + 1))
-    r += run_query(base_url, query)
-
-    minid, maxid, stepsize = calc_range_params(base_url, step_count, table, range_field)
-    
-    # gen queries to update null values in table for zoom level
-    queries = gen_update_null_queries(table, update_sd, update_se, minid, 
-                                    maxid, stepsize, z, range_field)
-    r += run_queries(table, base_url, queries)
-
-    # check that a given zoom level has some rows, no nulls in sd/se fields
-    # if any checks fail, an exception will be raised.
-    if zoom_ok(z, table, base_url):
-        return r
