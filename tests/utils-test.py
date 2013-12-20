@@ -7,6 +7,9 @@ SAMPLEWHERE = "SELECT * FROM table WHERE id = 1"
 
 class TestEverything(unittest.TestCase):
 
+    def setUp(self):
+        self.table = 'test_forma_update'
+
     def test_build_url(self):
         query = "SELECT count(*) FROM cdm_2013_10_24"
         result = build_url(BASEURL, query)
@@ -82,12 +85,12 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_get_field_val(self):
-        result = [get_field_val(f, BASEURL, "test_forma_update", "cartodb_id") for f in ["min", "max"]]
+        result = [get_field_val(f, BASEURL, self.table, "cartodb_id") for f in ["min", "max"]]
         expected = [22328022, 22328026]
         self.assertEqual(result, expected)
 
     def test_get_field_val1(self):
-        result = [get_field_val(f, BASEURL, "test_forma_update", "x") for f in ["min", "max"]]
+        result = [get_field_val(f, BASEURL, self.table, "x") for f in ["min", "max"]]
         expected = [2399, 6590]
         self.assertEqual(result, expected)
 
@@ -97,30 +100,27 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_calc_range_params(self):
-        table = 'test_forma_update'
         step_count = 2
 
         # check default field - cartodb_id
-        result = calc_range_params(BASEURL, step_count, table)
+        result = calc_range_params(BASEURL, step_count, self.table)
         expected = [22328022, 22328026, 2]
         self.assertEqual(result, expected)
 
     def test_calc_range_params1(self):
-        table = 'test_forma_update'
         step_count = 2
 
         # check another field - x
         range_field = 'x'
-        result = calc_range_params(BASEURL, step_count, table, range_field)
+        result = calc_range_params(BASEURL, step_count, self.table, range_field)
         expected = [2399, 6590, 2095]
         self.assertEqual(result, expected)
 
     def test_check_error(self):
-        table = "test_forma_update"
         query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
 
         # field exists - no error
-        q = query % (table, "z")
+        q = query % (self.table, "z")
         response = run_query(BASEURL, q)
 
         result = check_error(response)
@@ -129,11 +129,10 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_check_error2(self):
-        table = "test_forma_update"
         query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
 
         # field does not exist - should result in an error
-        q = query % (table, "zzzzzzz")
+        q = query % (self.table, "zzzzzzz")
         response = run_query(BASEURL, q)
 
         result = check_error(response)
@@ -142,7 +141,6 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_check_error3(self):
-        table = "test_forma_update"
         query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
 
         # test varnish error check, and JSONDecodeError
@@ -171,76 +169,52 @@ class TestEverything(unittest.TestCase):
         self.assertTrue(False)
 
     def test_count_ok(self):
-        table = 'test_forma_update'
-
-        self.assertFalse(count_ok(16, table, BASEURL))
+        self.assertFalse(count_ok(16, self.table, BASEURL))
 
     def test_count_ok1(self):
-        table = 'test_forma_update'
-
-        self.assertTrue(count_ok(15, table, BASEURL))
+        self.assertTrue(count_ok(15, self.table, BASEURL))
 
     def test_count_ok2(self):
-        table = 'test_forma_update'
-
-        self.assertTrue(count_ok(14, table, BASEURL))
+        self.assertTrue(count_ok(14, self.table, BASEURL))
 
     def test_nulls_ok(self):
-        table = 'test_forma_update'
-
-        result = nulls_ok(15, 'se', table, BASEURL)
+        result = nulls_ok(15, 'se', self.table, BASEURL)
         self.assertTrue(result)
 
     def test_nulls_ok1(self):
-        table = 'test_forma_update'
-
-        result = nulls_ok(15, 'sd', table, BASEURL)
+        result = nulls_ok(15, 'sd', self.table, BASEURL)
         self.assertFalse(result)
 
     def test_nulls_ok2(self):
-        table = 'test_forma_update'
-
-        result = nulls_ok(14, 'se', table, BASEURL)
+        result = nulls_ok(14, 'se', self.table, BASEURL)
         self.assertFalse(result)
 
     def test_nulls_ok3(self):
-        table = 'test_forma_update'
-
-        result = nulls_ok(14, 'sd', table, BASEURL)
+        result = nulls_ok(14, 'sd', self.table, BASEURL)
         self.assertTrue(result)
 
     def test_nulls_ok4(self):
-        table = 'test_forma_update'
-
-        result = nulls_ok(13, 'se', table, BASEURL)
+        result = nulls_ok(13, 'se', self.table, BASEURL)
         self.assertTrue(result)
 
     def test_nulls_ok5(self):
-        table = 'test_forma_update'
-
-        result = nulls_ok(13, 'sd', table, BASEURL)
+        result = nulls_ok(13, 'sd', self.table, BASEURL)
         self.assertTrue(result)
         
     def test_zoom_ok(self):
-        table = 'test_forma_update'
-
         # all good data
-        result = zoom_ok(13, table, BASEURL)
+        result = zoom_ok(13, self.table, BASEURL)
         self.assertTrue(result)
 
     def test_zoom_ok1(self):
-        table = 'test_forma_update'
-
         # has null se
         with self.assertRaises(Exception):
-            zoom_ok(14, table, BASEURL)
+            zoom_ok(14, self.table, BASEURL)
 
     def test_zoom_ok2(self):
-        table = 'test_forma_update'
-
         # has null sd
         with self.assertRaises(Exception):
-            zoom_ok(15, table, BASEURL)
+            zoom_ok(15, self.table, BASEURL)
 
     def test_process_zoom(self):
         self.assertTrue(False)
