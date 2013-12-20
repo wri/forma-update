@@ -166,6 +166,49 @@ def run_z17(base_url, step_count, init_table, table, z, zoom_sub, zoom,
 
     return r
 
+def count_ok(z, table, base_url):
+    count_query = 'SELECT z, count(z) FROM %s WHERE z = %i GROUP BY z'
+    count_query =  count_query % (table, z)
+
+    r = run_query(base_url, count_query)
+    print r.json()
+    if r.json()['total_rows'] == 0:
+        return False
+    else:
+        return True
+
+def nulls_ok(z, field, table, base_url):
+    null_query = 'SELECT z, count(z) FROM %s WHERE z = %i AND %s is Null GROUP BY z'
+    null_query = null_query % (table, z, field)
+
+    r = run_query(base_url, null_query)
+
+    if r.json()['total_rows'] > 0:
+        return False
+    else:
+        return True
+
+def zoom_ok(z, table, base_url):
+    errors = []
+
+    if not count_ok(z, table, base_url):
+        errors.append("Count error - no rows for zoom level %" % z)
+
+    if not nulls_ok(z, 'se', table, base_url):
+        errors.append("%s error - null values appear in %s for zoom %i"
+                        % (field, field, z))
+
+    if not nulls_ok(z, 'sd', table, base_url):
+        errors.append("%s error - null values appear in %s for zoom %i"
+                        % (field, field, z))
+
+    if errors:
+        msg = "Error: " + "\n".join(errors)
+        raise Exception(msg)
+
+    else:
+        return True
+
 def process_zoom(table, z, base_url, step_count, zoom_sub, zoom, update_sd, 
     update_se, range_field):
     r = []
@@ -179,7 +222,10 @@ def process_zoom(table, z, base_url, step_count, zoom_sub, zoom, update_sd,
     
     # gen queries to update null values in table for zoom level
     queries = gen_update_null_queries(table, update_sd, update_se, minid, 
-        maxid, stepsize, z, range_field)
+                                    maxid, stepsize, z, range_field)
     r += run_queries(table, base_url, queries)
 
-    return r
+    # check that a given zoom level has some rows, no nulls in sd/se fields
+    # if any checks fail, an exception will be raised.
+    if zoom_ok(z, table, base_url):
+        return r
