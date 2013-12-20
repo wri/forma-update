@@ -64,7 +64,7 @@ def calc_range_params(base_url, step_count, table, range_field='cartodb_id'):
     step_size = gen_step_size(min_id, max_id, step_count)
     print "Min: %d\nMax: %d\nStep size: %d" % (min_id, max_id, step_size)
 
-    return min_id, max_id, step_size
+    return [min_id, max_id, step_size]
 
 def check_error(response):
     """Parse error codes in query response and handle appropriately by
@@ -72,16 +72,18 @@ def check_error(response):
     # in case of HTML-page error message
     try:
         s = response.text
-    except JSONDecodeError:
+    except (JSONDecodeError, AttributeError):
         s = response
     if "503" and "varnish" in s.lower():
         print "Varnish error - query may have completed successfully"
-        return False
+        return False # i.e. not necessarily a real error
     elif "error" in s.lower():
         print "Query failed: \n%s" % s
         print "Retrying"
         return True
-        
+    else:
+        return False
+
 def run_query(base_url, query):
     max_tries = 5
     tries = 0
@@ -101,7 +103,7 @@ def run_query(base_url, query):
         print "\nFatal error. Aborting query retries after %s tries." % tries
         print "\nQuery: \n\"%s\"" % query
         print "\nURL: \n%s" % query_url
-        print "\nError: \n%s" % resp
+        print "\nError: \n%s" % response
         print "\nExiting script"
 
     else:
