@@ -284,16 +284,75 @@ class TestEverything(unittest.TestCase):
         self.assertTrue(result)
         
     def test_zoom_ok(self):
+        table = 'test_forma_update'
+
         # all good data
-        result = zoom_ok(13, self.table, BASEURL)
+        z = 13
+        ctrl_table = self.table
+        result = zoom_ok(z, self.table, ctrl_table, BASEURL)
         self.assertTrue(result)
 
     def test_zoom_ok1(self):
+        table = 'test_forma_update'
+
         # has null se
+        z = 14
+        ctrl_table = self.table
         with self.assertRaises(Exception):
-            zoom_ok(14, self.table, BASEURL)
+            zoom_ok(z, self.table, ctrl_table, BASEURL)
 
     def test_zoom_ok2(self):
+        table = 'test_forma_update'
+
         # has null sd
+        z = 15
+        ctrl_table = self.table
         with self.assertRaises(Exception):
-            zoom_ok(15, self.table, BASEURL)
+            zoom_ok(z, self.table, ctrl_table, BASEURL)
+
+    def test_zoom_ok3(self):
+        # all good data, except doesn't match control
+        z = 13
+        ctrl_table = 'gfw2_forma_control_pixels'
+        with self.assertRaises(Exception):
+            result = zoom_ok(z, self.table, ctrl_table, BASEURL)
+
+    def test_control_pixel_ok_se_true(self):
+        z = 15
+        field = 'se'
+        table = 'gfw2_forma'
+        ctrl_table = 'gfw2_forma_control_pixels'
+        
+        result = control_pixel_ok(z, field, table, ctrl_table, BASEURL)
+        
+        self.assertTrue(result)
+
+    def test_control_pixel_ok_se_false(self):
+        z = 13
+        field = 'se'
+        table = self.table
+        ctrl_table = 'gfw2_forma_control_pixels'
+        
+        result = control_pixel_ok(z, field, table, ctrl_table, BASEURL)
+        
+        self.assertFalse(result)
+
+    def test_control_pixel_ok_sd_true(self):
+        z = 15
+        field = 'sd'
+        table = 'gfw2_forma'
+        ctrl_table = 'gfw2_forma_control_pixels'
+        
+        result = control_pixel_ok(z, field, table, ctrl_table, BASEURL)
+        
+        self.assertTrue(result)
+
+    def test_control_pixel_ok_sd_false(self):
+        z = 13
+        field = 'sd'
+        table = self.table
+        ctrl_table = 'gfw2_forma_control_pixels'
+        
+        result = control_pixel_ok(z, field, table, ctrl_table, BASEURL)
+        
+        self.assertFalse(result)
