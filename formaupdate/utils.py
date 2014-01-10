@@ -163,24 +163,45 @@ def nulls_ok(z, field, table, base_url):
     else:
         return True
 
-def zoom_ok(z, table, base_url):
+def control_pixel_ok(z, field, table, ctrl_table, base_url):
+    '''Check whether '''
+    match_clause = 'gfw.x = cp.x AND gfw.y = cp.y AND gfw.z = cp.z AND cp.%s <@ gfw.%s' % (field, field)
+    inner_join = 'SELECT * FROM %s WHERE z = %i' % (ctrl_table, z)
+
+    query = 'SELECT gfw.* FROM %s AS gfw INNER JOIN ( %s ) AS cp ON %s' % (table, inner_join, match_clause)
+
+    result = run_query(base_url, query).json()['total_rows']
+    expected = 1
+
+    return expected == result
+    
+def zoom_ok(z, table, ctrl_table, base_url):
+    print '\n\n\nChecking values for zoom %i' % z
     errors = []
 
     if not count_ok(z, table, base_url):
-        errors.append("Count error - no rows for zoom level %" % z)
+        errors.append('Count error - no rows for zoom level %d' % z)
 
     if not nulls_ok(z, 'se', table, base_url):
-        errors.append("%s error - null values appear in %s for zoom %i"
+        errors.append('%s error - null values appear in %s for zoom %i'
                         % (field, field, z))
 
     if not nulls_ok(z, 'sd', table, base_url):
-        errors.append("%s error - null values appear in %s for zoom %i"
+        errors.append('%s error - null values appear in %s for zoom %i'
                         % (field, field, z))
 
+    field = 'sd'
+    if not control_pixel_ok(z, field, table, ctrl_table, base_url):
+        errors.append('Control pixel match failed for zoom %d for field "%s"' % (z, field))
+
+    field = 'se'
+    if not control_pixel_ok(z, field, table, ctrl_table, base_url):
+        errors.append('Control pixel match failed for zoom %d for field "%s"' % (z, field))
+
     if errors:
-        msg = "Error: " + "\n".join(errors)
+        msg = 'Error: ' + '\n'.join(errors)
         raise Exception(msg)
 
     else:
-        print "Zoom %d looks ok" % z
+        print '\n\n\nZoom %d is ok\n\n\n' % z
         return True
