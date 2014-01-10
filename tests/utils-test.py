@@ -1,11 +1,15 @@
 import unittest
 from formaupdate.utils import *
+from formaupdate import runner
 
 BASEURL = "https://wri-01.cartodb.com/api/v2/sql?q="
 SAMPLEQUERY = "SELECT * FROM table"
 SAMPLEWHERE = "SELECT * FROM table WHERE id = 1"
 
 class TestEverything(unittest.TestCase):
+
+    def setUp(self):
+        self.table = 'test_forma_update'
 
     def test_build_url(self):
         query = "SELECT count(*) FROM cdm_2013_10_24"
@@ -17,6 +21,7 @@ class TestEverything(unittest.TestCase):
         result = parse_where(SAMPLEQUERY)
         self.assertEqual(result, "%s WHERE" % SAMPLEQUERY )
 
+    def test_parse_where1(self):
         result = parse_where(SAMPLEWHERE)
         self.assertEqual(result, "%s AND" % SAMPLEWHERE)
 
@@ -27,11 +32,16 @@ class TestEverything(unittest.TestCase):
         expected = "%s WHERE cartodb_id::int >= %d AND cartodb_id::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
 
+    def test_range_query1(self):
+        start, end = 10, 20
         query = SAMPLEWHERE
         result = range_query(start, end, query, "cartodb_id")
         expected = "%s AND cartodb_id::int >= %d AND cartodb_id::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
 
+    def test_range_query2(self):
+        start, end = 10, 20
+        query = SAMPLEWHERE
         result = range_query(start, end, query, "z")
         expected = "%s AND z::int >= %d AND z::int < %d" % (query, start, end)
         self.assertEqual(result, expected)
@@ -76,11 +86,12 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_get_field_val(self):
-        result = [get_field_val(f, BASEURL, "test_forma_update", "cartodb_id") for f in ["min", "max"]]
+        result = [get_field_val(f, BASEURL, self.table, "cartodb_id") for f in ["min", "max"]]
         expected = [22328022, 22328026]
         self.assertEqual(result, expected)
 
-        result = [get_field_val(f, BASEURL, "test_forma_update", "x") for f in ["min", "max"]]
+    def test_get_field_val1(self):
+        result = [get_field_val(f, BASEURL, self.table, "x") for f in ["min", "max"]]
         expected = [2399, 6590]
         self.assertEqual(result, expected)
 
@@ -90,71 +101,199 @@ class TestEverything(unittest.TestCase):
         self.assertEqual(result, expected)
 
     def test_calc_range_params(self):
-        self.assertTrue(False)
+        step_count = 2
+
+        # check default field - cartodb_id
+        result = calc_range_params(BASEURL, step_count, self.table)
+        expected = [22328022, 22328026, 2]
+        self.assertEqual(result, expected)
+
+    def test_calc_range_params1(self):
+        step_count = 2
+
+        # check another field - x
+        range_field = 'x'
+        result = calc_range_params(BASEURL, step_count, self.table, range_field)
+        expected = [2399, 6590, 2095]
+        self.assertEqual(result, expected)
 
     def test_check_error(self):
-        self.assertTrue(False)
+        query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
+
+        # field exists - no error
+        q = query % (self.table, "z")
+        response = run_query(BASEURL, q)
+
+        result = check_error(response)
+        expected = False
+
+        self.assertEqual(result, expected)
+
+    def test_check_error2(self):
+        query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
+
+        # field does not exist - should result in an error
+        q = query % (self.table, "zzzzzzz")
+        response = run_query(BASEURL, q)
+
+        result = check_error(response)
+        expected = True
+
+        self.assertEqual(result, expected)
+
+    def test_check_error3(self):
+        query = "SELECT z, count(z) FROM %s WHERE %s = 15 AND se is Null GROUP BY z"
+
+        # test varnish error check, and JSONDecodeError
+        response = '503 varnish'
+        result = check_error(response)
+        expected = False # Varnish error is not necessarily an indicator of failure
+
+        self.assertEqual(result, expected)
 
     def test_run_query(self):
-        self.assertTrue(False)
+        query = "SELECT x FROM %s LIMIT 1" % self.table
+        result = run_query(BASEURL, query)
+        result = result.json().keys()
+        expected = [u'fields', u'rows', u'total_rows', u'time']
+
+        self.assertEqual(result, expected)
+
+    def test_run_query1(self):
+        # force query to fail
+        query = "SELECT bad_field FROM %s LIMIT 1" % self.table
+        result = run_query(BASEURL, query)
+        result = result.json()
+        expected = {u'error': [u'column "bad_field" does not exist']}
+
+        self.assertEqual(result, expected)
 
     def test_run_queries(self):
-        self.assertTrue(False)
+        query = "SELECT x FROM %s LIMIT 1" % self.table
+        result = run_queries(self.table, BASEURL, [query, query])
+        result = [r.json().keys() for r in result]
+        expected = [[u'fields', u'rows', u'total_rows', u'time'],
+                    [u'fields', u'rows', u'total_rows', u'time']]
+
+        self.assertEqual(result, expected)
 
     def test_gen_load_17_query(self):
-        self.assertTrue(False)
+        query = runner.ZOOMQUERY17
+        sub_query = runner.ZOOMSUBQUERY17
+        input_table = 'cdm_latest'
+        table = 'gfw2_forma_ew'
+        minid = 10
+        maxid = 20
+        stepsize = 5
+        z = 17
+        range_field = 'x'
 
-    def test_gen_update_null_queries(self):
-        self.assertTrue(False)
+        result = gen_load_17_query(sub_query, query, input_table,
+                                   table, minid, maxid, stepsize, z, range_field)
+        expected = ['INSERT INTO gfw2_forma_ew (x,y,date_array,z,iso) (SELECT x, y, array_agg(undate) as date_array, 17 as z,array_agg(iso) as iso FROM (SELECT x::int, y::int, p::int AS undate,iso FROM cdm_latest WHERE x::int >= 10 AND x::int < 15) foo GROUP BY x,y)',
+                    'INSERT INTO gfw2_forma_ew (x,y,date_array,z,iso) (SELECT x, y, array_agg(undate) as date_array, 17 as z,array_agg(iso) as iso FROM (SELECT x::int, y::int, p::int AS undate,iso FROM cdm_latest WHERE x::int >= 15 AND x::int < 20) foo GROUP BY x,y)']
+        self.assertEqual(result, expected)
 
-    def test_create_indexes(self):
-        self.assertTrue(False)
+    def test_gen_update_null_queries_sd(self):
+        # test for sd field
+        table = 'gfw2_forma_ew'
+        minid = 10
+        maxid = 20
+        stepsize = 5
+        z = 13
+        range_field = 'x'
+        query = runner.UPDATENULLSD
 
-    def test_run_z17(self):
-        self.assertTrue(False)
+        result = gen_update_null_queries(table, query, minid, maxid,
+                                         stepsize, z, range_field)
+        expected = ['UPDATE gfw2_forma_ew SET sd = ARRAY(SELECT DISTINCT UNNEST(date_array) ORDER BY 1) WHERE x::int >= 10 AND x::int < 15 AND z::int >= 13 AND z::int < 14',
+                    'UPDATE gfw2_forma_ew SET sd = ARRAY(SELECT DISTINCT UNNEST(date_array) ORDER BY 1) WHERE x::int >= 15 AND x::int < 20 AND z::int >= 13 AND z::int < 14'] 
+
+        self.assertEqual(result, expected)
+
+    def test_gen_update_null_queries_se(self):
+        # test for se field
+        table = 'gfw2_forma_ew'
+        minid = 10
+        maxid = 20
+        stepsize = 5
+        z = 13
+        range_field = 'x'
+        query = runner.UPDATENULLSE
+
+        result = gen_update_null_queries(table, query, minid, maxid,
+                                         stepsize, z, range_field)
+        expected = ['UPDATE gfw2_forma_ew SET se = ARRAY(SELECT count(*) FROM UNNEST(date_array) d GROUP BY d ORDER BY d) WHERE x::int >= 10 AND x::int < 15 AND z::int >= 13 AND z::int < 14',
+                    'UPDATE gfw2_forma_ew SET se = ARRAY(SELECT count(*) FROM UNNEST(date_array) d GROUP BY d ORDER BY d) WHERE x::int >= 15 AND x::int < 20 AND z::int >= 13 AND z::int < 14']
+
+        self.assertEqual(result, expected)
+
+    def test_gen_drop_index_queries(self):
+        query = runner.DROPINDEX
+        table = 'gfw2_forma_ew'
+
+        result = gen_drop_index_queries(query, table)
+        expected = [query % (table, 'x'),
+                    query % (table, 'y'),
+                    query % (table, 'z')]
+
+        self.assertEqual(result, expected)
+
+    def test_gen_create_index_queries(self):
+        query = runner.CREATEINDEX
+        table = 'gfw2_forma_ew'
+
+        result = gen_create_index_queries(query, table)
+        expected = [query % (table, 'x', table, 'x'),
+                    query % (table, 'y', table,  'y'),
+                    query % (table, 'z', table, 'z')]
+
+        self.assertEqual(result, expected)
 
     def test_count_ok(self):
-        table = 'test_forma_update'
+        self.assertFalse(count_ok(16, self.table, BASEURL))
 
-        self.assertFalse(count_ok(16, table, BASEURL))
-        self.assertTrue(count_ok(15, table, BASEURL))
-        self.assertTrue(count_ok(14, table, BASEURL))
+    def test_count_ok1(self):
+        self.assertTrue(count_ok(15, self.table, BASEURL))
+
+    def test_count_ok2(self):
+        self.assertTrue(count_ok(14, self.table, BASEURL))
 
     def test_nulls_ok(self):
-        table = 'test_forma_update'
-
-        result = nulls_ok(15, 'se', table, BASEURL)
+        result = nulls_ok(15, 'se', self.table, BASEURL)
         self.assertTrue(result)
 
-        result = nulls_ok(15, 'sd', table, BASEURL)
+    def test_nulls_ok1(self):
+        result = nulls_ok(15, 'sd', self.table, BASEURL)
         self.assertFalse(result)
 
-        result = nulls_ok(14, 'se', table, BASEURL)
+    def test_nulls_ok2(self):
+        result = nulls_ok(14, 'se', self.table, BASEURL)
         self.assertFalse(result)
 
-        result = nulls_ok(14, 'sd', table, BASEURL)
+    def test_nulls_ok3(self):
+        result = nulls_ok(14, 'sd', self.table, BASEURL)
         self.assertTrue(result)
 
-        result = nulls_ok(13, 'se', table, BASEURL)
+    def test_nulls_ok4(self):
+        result = nulls_ok(13, 'se', self.table, BASEURL)
         self.assertTrue(result)
 
-        result = nulls_ok(13, 'sd', table, BASEURL)
+    def test_nulls_ok5(self):
+        result = nulls_ok(13, 'sd', self.table, BASEURL)
         self.assertTrue(result)
         
     def test_zoom_ok(self):
-        table = 'test_forma_update'
-
         # all good data
-        result = zoom_ok(13, table, BASEURL)
+        result = zoom_ok(13, self.table, BASEURL)
         self.assertTrue(result)
 
+    def test_zoom_ok1(self):
         # has null se
         with self.assertRaises(Exception):
-            zoom_ok(14, table, BASEURL)
+            zoom_ok(14, self.table, BASEURL)
 
+    def test_zoom_ok2(self):
         # has null sd
         with self.assertRaises(Exception):
-            zoom_ok(15, table, BASEURL)
-
-    def test_process_zoom(self):
-        self.assertTrue(False)
+            zoom_ok(15, self.table, BASEURL)
