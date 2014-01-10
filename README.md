@@ -32,10 +32,10 @@ SQL statement magic.
 From the CartoDB web interface:
 
 1. Pull in the `gfw2_forma` schema: `SELECT * FROM gfw2_forma limit 1`.
-2. Create a table from the query, calling it gfw2_forma_ew (or the like).
+2. Create a table from the query, calling it `gfw2_forma_ew` (or the like).
 3. Delete the one record: `DELETE FROM gfw2_forma_ew`
 4. Make the table public - DO NOT FORGET TO DO THIS!
-5. Drop some ecoregions from the table and create a new table from the query.
+5. Drop some ecoregions from the `cdm_latest` table and create a new table from the query.
 
 ```sql
 SELECT * FROM cdm_latest WHERE ecoregion != 60122 AND ecoregion != 60147 AND ecoregion != 30109 AND ecoregion != 40134 AND ecoregion != 40150 AND ecoregion != 40131 AND ecoregion != 40136 AND ecoregion != 40126 AND ecoregion != 30130 AND ecoregion != 40141
@@ -45,14 +45,14 @@ Then, from your terminal:
 
 1. If necessary, change the default table name in `runner.py` to match the new table you created.
 2. Run `main()` in `runner.py`.
-3. Swap out the existing `gfw2_forma table` for `gfw2_forma_ew`:
+3. Swap out the existing `gfw2_forma` table for `gfw2_forma_ew` using the web interface. DO NOT USE `ALTER TABLE` COMMANDS. They break things. This is what you're effectively doing, but don't do it this way!
 
 ```sql
 ALTER TABLE gfw2_forma RENAME TO gfw2_forma_bu;
 ALTER TABLE gfw2_forma_ew RENAME TO gfw2_forma;
 ```
 
-If something breaks and you need to switch things back, just run this:
+If something breaks and you need to switch things back, just change the names again. This is what you're doing:
 
 ```sql
 ALTER TABLE gfw2_forma RENAME TO gfw2_forma_ew;
