@@ -164,7 +164,13 @@ def nulls_ok(z, field, table, base_url):
         return True
 
 def control_pixel_ok(z, field, table, ctrl_table, base_url):
-    '''Check whether '''
+    '''Check whether older data was properly handled with latest
+    update. Uses control pixels table generated with this query:
+
+    SELECT DISTINCT ON (z) x,y,z,sd,se 
+    FROM gfw2_forma 
+    ORDER BY z, array_length(sd, 1) DESC
+    '''
     match_clause = 'gfw.x = cp.x AND gfw.y = cp.y AND gfw.z = cp.z AND cp.%s <@ gfw.%s' % (field, field)
     inner_join = 'SELECT * FROM %s WHERE z = %i' % (ctrl_table, z)
 
