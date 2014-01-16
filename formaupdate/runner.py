@@ -8,7 +8,7 @@ import requests
 from utils import *
 
 # table containing data in common data model
-INITTABLE = "cdm_latest"
+INITTABLE = "cdm_latest_ew"
 
 # temporary table during update process
 TABLE = "gfw2_forma_ew"
@@ -55,24 +55,27 @@ def create_indexes(drop_query, create_query, table, base_url):
 def run_z17(base_url, step_count, init_table, table, z, zoom_sub,
             zoom, sd_query, se_query, range_field, ctrl_table):
 
+    results = []
+    queries = []
+
     # get range for init table
     minid, maxid, stepsize = calc_range_params(base_url, step_count,
                                                init_table, range_field)
     # gen queries to load data into new table for z17
-    queries = gen_load_17_query(zoom_sub, zoom, init_table, table,
+    queries += gen_load_17_query(zoom_sub, zoom, init_table, table,
                                 minid, maxid, stepsize, z, range_field)
-
-    results = []
 
     # run queries
     results = run_queries(table, base_url, queries)
+
+    queries = []
 
     # get range for new table
     minid, maxid, stepsize = calc_range_params(base_url, step_count,
                                                table, range_field)
 
     # gen queries to update null values in new table for z17
-    queries = gen_update_null_queries(table, UPDATENULLSD17, minid,
+    queries += gen_update_null_queries(table, UPDATENULLSD17, minid,
                                       maxid, stepsize, z,
                                       range_field=range_field)
 
@@ -116,6 +119,14 @@ def process_zoom(table, z, base_url, step_count, zoom_sub, zoom,
     # if any checks fail, an exception will be raised.
     if zoom_ok(z, table, ctrl_table, base_url):
         return results
+
+def check_zooms(z_max=MAXZOOM, z_min=MINZOOM, table=TABLE, 
+                control_table=CONTROLTABLE, base_url=BASEURL):
+    '''Check zoom levels outside of the update process. Handy for
+    double-checking that everything looks ok after an update.'''
+
+    for z in range(z_max, z_min - 1, -1):
+        zoom_ok(z, table, control_table, base_url)
 
 def main(input_table=INITTABLE, output_table=TABLE, z_min=MINZOOM, z_max=MAXZOOM):
     t = time.time()

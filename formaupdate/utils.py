@@ -168,7 +168,7 @@ def control_pixel_ok(z, field, table, ctrl_table, base_url):
     match_clause = 'gfw.x = cp.x AND gfw.y = cp.y AND gfw.z = cp.z AND cp.%s <@ gfw.%s' % (field, field)
     inner_join = 'SELECT * FROM %s WHERE z = %i' % (ctrl_table, z)
 
-    query = 'SELECT gfw.* FROM %s AS gfw INNER JOIN ( %s ) AS cp ON %s' % (table, inner_join, match_clause)
+    query = 'SELECT gfw.x, gfw.y, gfw.z, gfw.sd, gfw.se FROM %s AS gfw INNER JOIN ( %s ) AS cp ON %s' % (table, inner_join, match_clause)
 
     result = run_query(base_url, query).json()['total_rows']
     expected = 1
