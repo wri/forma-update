@@ -35,29 +35,19 @@ From the CartoDB web interface:
 2. Create a table from the query, calling it `gfw2_forma_ew` (or the like).
 3. Delete the one record: `DELETE FROM gfw2_forma_ew`
 4. Make the table public - DO NOT FORGET TO DO THIS!
-5. Drop some ecoregions from the `cdm_latest` table and create a new table from the query.
+5. Upload the CDM file from S3. Rename it `cdm_latest_ew`
+6. Drop some ecoregions from the table.
 
 ```sql
-SELECT * FROM cdm_latest WHERE ecoregion != 60122 AND ecoregion != 60147 AND ecoregion != 30109 AND ecoregion != 40134 AND ecoregion != 40150 AND ecoregion != 40131 AND ecoregion != 40136 AND ecoregion != 40126 AND ecoregion != 30130 AND ecoregion != 40141
+DELETE FROM cdm_latest WHERE ecoregion = '60122' OR ecoregion = '60147' OR ecoregion = '30109' OR ecoregion = '40134' OR ecoregion = '40150' OR ecoregion = '40131' OR ecoregion = '40136' OR ecoregion = '40126' OR ecoregion = '30130' OR ecoregion = '40141'
 ```
 
-Then, from your terminal:
+Then, get ready to run some Python code:
 
-1. If necessary, change the default table name in `runner.py` to match the new table you created.
-2. Run `main()` in `runner.py`.
-3. Swap out the existing `gfw2_forma` table for `gfw2_forma_ew` using the web interface. DO NOT USE `ALTER TABLE` COMMANDS. They break things. This is what you're effectively doing, but don't do it this way!
-
-```sql
-ALTER TABLE gfw2_forma RENAME TO gfw2_forma_bu;
-ALTER TABLE gfw2_forma_ew RENAME TO gfw2_forma;
-```
-
-If something breaks and you need to switch things back, just change the names again. This is what you're doing:
-
-```sql
-ALTER TABLE gfw2_forma RENAME TO gfw2_forma_ew;
-ALTER TABLE gfw2_forma_bu RENAME TO gfw2_forma;
-```
+1. If necessary, change the default table name in `runner.py` to match the new `gfw_forma_ew` and `cdm_latest_ew` tables you've created.
+2. Run `main()` in `runner.py`. This will do some sanity checking of the results as the process runs.
+3. If you want to double-check the results before making the new table live, run [check_zooms()](https://github.com/wri/forma-update/blob/2fd664fcd7095850fa4a8e0de7507279a113dd9c/formaupdate/runner.py#L123-129)
+4. Swap out the existing `gfw2_forma` table for `gfw2_forma_ew` using the web interface to rename the tables. DO NOT USE `ALTER TABLE` COMMANDS. If something breaks and you need to switch things back, just change the names again.
 
 ### Closing thoughts
 
