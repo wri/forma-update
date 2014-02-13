@@ -49,7 +49,7 @@ touch $readme
 
 echo "FORMA - Forest Monitoring for Action" >> $readme
 echo "For more information, please visit http://www.GlobalForestWatch.org or the project code repository:" >> $readme
-echo "http://github.com/reddmetrics/forma-clj" >> $readme
+echo "http://github.com/wri/forma-clj" >> $readme
 echo >> $readme; echo >> $readme;
 echo "Version $version" >> $readme
 echo "Date of processing: $rundate" >> $readme
