@@ -2,11 +2,8 @@ import urllib
 import itertools
 import math
 from simplejson.decoder import JSONDecodeError
-from time import sleep
 
 import requests
-
-TIMEOUT = 600
 
 def build_url(base_url, query):
     """Build full query URL, including URL-encoded query."""
@@ -44,7 +41,6 @@ def get_field_val(func, base_url, table, field, zoom=None):
 
     query = "SELECT %s(%s::int) FROM %s" % (func, field, table)
     if zoom:
-        # restrict to a specific zoom level
         query = range_query(zoom, zoom + 1, query, 'z')
 
     url = build_url(base_url, query)
@@ -73,7 +69,7 @@ def calc_range_params(base_url, step_count, table, range_field='cartodb_id', zoo
 
     return [min_id, max_id, step_size]
 
-def check_error(response, query=None):
+def check_error(response):
     """Parse error codes in query response and handle appropriately by
     returning true for fatal error, false otherwise."""
     # in case of HTML-page error message
@@ -88,14 +84,6 @@ def check_error(response, query=None):
         print "Query failed: \n%s" % s
         print "Retrying"
         return True
-    elif s == "" or s == None:
-        if "INSERT" in query:
-            timeout = TIMEOUT
-        else:
-            timeout = TIMEOUT / 4
-        print "Query stalled out - best to let this marinate for %d minutes" % TIMEOUT / 60.0
-        sleep(timeout)
-        return False
     else:
         return False
 
@@ -109,16 +97,18 @@ def run_query(base_url, query):
 
     while tries < max_tries:
         response = requests.get(query_url)
-        error = check_error(response, query)
-        if error and tries < max_tries:
+        error = check_error(response)
+        if error:
             tries += 1
         else:
-            print "\nFatal error. Aborting query retries after %s tries." % tries
-            print "\nQuery: \n\"%s\"" % query
-            print "\nURL: \n%s" % query_url
-            print "\nError: \n%s" % response
-            print "\nExiting script"
             break
+    if error:
+        print "\nFatal error. Aborting query retries after %s tries." % tries
+        print "\nQuery: \n\"%s\"" % query
+        print "\nURL: \n%s" % query_url
+        print "\nError: \n%s" % response
+        print "\nExiting script"
+
     else:
         print "Query completed successfully: %s" % response.text
 
@@ -184,14 +174,7 @@ def nulls_ok(z, field, table, base_url):
         return True
 
 def control_pixel_ok(z, field, table, ctrl_table, base_url):
-    '''Check whether older data was properly handled with latest
-     update. Uses control pixels table generated with this query:
-
-     SELECT DISTINCT ON (z) x,y,z,sd,se
-     FROM gfw2_forma
-     ORDER BY z, array_length(sd, 1) DESC
-     '''
-
+    '''Check whether '''
     match_clause = 'gfw.x = cp.x AND gfw.y = cp.y AND gfw.z = cp.z AND cp.%s <@ gfw.%s' % (field, field)
     inner_join = 'SELECT * FROM %s WHERE z = %i' % (ctrl_table, z)
 
@@ -234,11 +217,3 @@ def zoom_ok(z, table, ctrl_table, base_url):
     else:
         print '\n\n\nZoom %d is ok\n\n\n' % z
         return True
-
-def check_zooms(z_max=MAXZOOM, z_min=MINZOOM, table=TABLE,
-                control_table=CONTROLTABLE, base_url=BASEURL):
-     '''Check zoom levels outside of the update process. Handy for
-     double-checking that everything looks ok after an update.'''
-
-     for z in range(z_max, z_min - 1, -1):
-         zoom_ok(z, table, control_table, base_url)
