@@ -54,11 +54,12 @@ echo >> $readme; echo >> $readme;
 echo "Version $version" >> $readme
 echo "Date of processing: $rundate" >> $readme
 echo "Dates covered: $start to $end" >> $readme
-echo "Spatial resolution: ~500 meters squared, or 0.0043 decimal degrees" >> $readme
+echo "Spatial resolution: ~500 meters squared, or 0.00426666667 decimal degrees" >> $readme
 echo "Temporal resolution: 16 days" >> $readme
 echo "Schema: lat,lon,iso,gadm2,date"
 echo "N.B. gadm2 is the objectid for the GADM v2.0 dataset available at gadm.org and can be used to merge in data on administrative units."
-echo "Threshold: $threshold percent probability"
+echo "Threshold: $threshold percent probability."
+echo "Date: Date the probability first crossed the given threshold." >> $readme
 echo >> $readme; echo >> $readme;
 echo "Data are in the public domain via the CC0 license:" >> $readme
 echo "http://creativecommons.org/publicdomain/zero/1.0/" >> $readme
