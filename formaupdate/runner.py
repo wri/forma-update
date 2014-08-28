@@ -14,7 +14,7 @@ INITTABLE = "cdm_2014_03_16"
 TABLE = "gfw2_forma_ew1"
 
 # table for checking whether specific pixels were correctly processed
-CONTROLTABLE = 'gfw2_forma_control_pixels'
+CONTROLTABLE = 'gfw2_forma_control_pixels_new'
 
 APIKEY = os.environ["CARTODB_API_KEY"]
 
@@ -22,7 +22,6 @@ APIKEY = os.environ["CARTODB_API_KEY"]
 BASEURL = "https://wri-01.cartodb.com/api/v2/sql?api_key=%s&q=" % APIKEY
 
 RANGEFIELD = 'cartodb_id'
-RANGEFIELD2 = 'cartodb_id'
 MAXZOOM = 17
 MINZOOM = 6
 STEPCOUNT = 20
@@ -57,14 +56,14 @@ def create_indexes(drop_query, create_query, table, base_url):
 def run_z17(base_url, step_count, init_table, table, z, zoom_sub,
             zoom, sd_query, se_query, range_field, ctrl_table):
 
+    results = []
+
     # get range for init table
     minid, maxid, stepsize = calc_range_params(base_url, step_count,
                                                init_table, range_field)
     # gen queries to load data into new table for z17
     queries = gen_load_17_query(zoom_sub, zoom, init_table, table,
                                 minid, maxid, stepsize, z, range_field)
-
-    results = []
 
     # run queries
     results = run_queries(table, base_url, queries)
@@ -93,18 +92,20 @@ def run_z17(base_url, step_count, init_table, table, z, zoom_sub,
 
 def process_zoom(table, z, base_url, step_count, zoom_sub, zoom,
                  update_sd, update_se, range_field, ctrl_table):
+
     results = []
+
     print "\nRunning zoom %d\n" % z
 
-    # # incrementally add data for zoom level
-    # # get range for table
-    # minid, maxid, stepsize = calc_range_params(base_url, step_count,
-    #                                            table, range_field,
-    #                                            zoom=z+1)
+    # incrementally add data for zoom level
+    # get range for table
+    minid, maxid, stepsize = calc_range_params(base_url, step_count,
+                                               table, range_field,
+                                               zoom=z+1)
 
-    # # gen queries to load data for zoom level
-    # queries = gen_load_Z_query(zoom_sub, zoom, table, minid, maxid,
-    #                            stepsize, z, range_field)
+    # gen queries to load data for zoom level
+    queries = gen_load_Z_query(zoom_sub, zoom, table, minid, maxid,
+                               stepsize, z, range_field)
     
     # results += run_queries(table, base_url, queries)
 
@@ -136,19 +137,27 @@ def main(input_table=INITTABLE, output_table=TABLE, z_min=MINZOOM, z_max=MAXZOOM
     t = time.time()
     responses = []
     
-    # load and update data for z17
-    responses += run_z17(BASEURL, STEPCOUNT, INITTABLE, TABLE, z_max,
-                         ZOOMSUBQUERY17, ZOOMQUERY17, UPDATENULLSD17,
-                         UPDATENULLSE17, RANGEFIELD, CONTROLTABLE)
+    # # load and update data for z17
+    # responses += run_z17(BASEURL, STEPCOUNT, INITTABLE, TABLE, z_max,
+    #                      ZOOMSUBQUERY17, ZOOMQUERY17, UPDATENULLSD17,
+    #                      UPDATENULLSE17, RANGEFIELD, CONTROLTABLE)
     
-    # create indexes for table
-    responses += create_indexes(DROPINDEX, CREATEINDEX, TABLE, BASEURL)
+    # # create indexes for table
+    # responses += create_indexes(DROPINDEX, CREATEINDEX, TABLE, BASEURL)
 
-    # # process data for zooms below 17
-    # for z in range(z_max - 1, z_min - 1, -1): # z17 already done
-    #     process_zoom(TABLE, z, BASEURL, STEPCOUNT, ZOOMSUBQUERY,
-    #                  ZOOMQUERY, UPDATENULLSD, UPDATENULLSE,
-    #                  RANGEFIELD2, CONTROLTABLE)
+    # process data for zooms below 17
+    for z in range(z_max - 1, z_min - 1, -1): # z17 already done
+        process_zoom(TABLE, z, BASEURL, STEPCOUNT, ZOOMSUBQUERY,
+                     ZOOMQUERY, UPDATENULLSD, UPDATENULLSE,
+                     RANGEFIELD, CONTROLTABLE)
 
     print "\nElapsed time: %0.1f minutes" % ((time.time() - t) / 60)
     return responses
+
+
+with open("/tmp/gfw.txt") as gfw:
+    with open("/tmp/gfw2.txt", "w") as gfw2:
+        for line in gfw:
+            line = line.replace("{", "\"{").replace("}", "}\"")
+            gfw2.write(line)
+    
