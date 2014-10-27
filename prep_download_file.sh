@@ -1,15 +1,14 @@
 # This script pulls in the latest FORMA data, preprocessed for this
 # schema, and generates a master file on S3.
 
+# set up dates
+rundate=$1
+start=$2
+end=$3
+
 # set version
 version="1.0"
 threshold=50
-
-# set up dates
-
-rundate="2014-01-08"
-start="2005-12-18"
-end="2013-12-19"
 
 # header
 header="lat,lon,iso,gadm2,date"
@@ -21,7 +20,6 @@ rm -rf $basedir
 mkdir -p $basedir
 
 # set readme
-
 readme="$basedir/readme.txt"
 
 # set paths and filenames

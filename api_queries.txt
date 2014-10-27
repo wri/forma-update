@@ -1,0 +1,8 @@
+# ALTER TABLE forma_api_new ADD COLUMN date_new date;
+UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 0 AND date_new IS null
+UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 1 AND date_new IS null
+UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 2 AND date_new IS null
+UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 3 AND date_new IS null
+UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 4 AND date_new IS null
+ALTER TABLE forma_api_new DROP COLUMN date;
+ALTER TABLE forma_api_new RENAME COLUMN date_new to date;

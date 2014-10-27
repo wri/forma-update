@@ -1,0 +1,109 @@
+ALTER TABLE gfw2_forma_latest ADD COLUMN z_int int;
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 17 AND mod(cartodb_id, 5) = 0 AND z_int IS null 
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 17 AND mod(cartodb_id, 5) = 1 AND z_int IS null 
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 17 AND mod(cartodb_id, 5) = 2 AND z_int IS null 
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 17 AND mod(cartodb_id, 5) = 3 AND z_int IS null 
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 17 AND mod(cartodb_id, 5) = 4 AND z_int IS null 
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 16 AND mod(cartodb_id, 5) = 0 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 16 AND mod(cartodb_id, 5) = 1 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 16 AND mod(cartodb_id, 5) = 2 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 16 AND mod(cartodb_id, 5) = 3 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int = 16 AND mod(cartodb_id, 5) = 4 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int < 16 AND mod(cartodb_id, 5) = 0 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int < 16 AND mod(cartodb_id, 5) = 1 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int < 16 AND mod(cartodb_id, 5) = 2 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int < 16 AND mod(cartodb_id, 5) = 3 AND z_int IS null
+UPDATE gfw2_forma_latest SET z_int = z::int WHERE z::int < 16 AND mod(cartodb_id, 5) = 4 AND z_int IS null
+
+ALTER TABLE gfw2_forma_latest DROP COLUMN z;
+ALTER TABLE gfw2_forma_latest RENAME COLUMN z_int to z;
+
+DROP INDEX IF EXISTS gfw2_forma_latest_z_idx;
+CREATE INDEX gfw2_forma_latest_z_idx ON gfw2_forma_latest (z);
+
+ALTER TABLE gfw2_forma_latest ADD COLUMN x_int int;
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 17 AND mod(cartodb_id, 5) = 0 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 17 AND mod(cartodb_id, 5) = 1 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 17 AND mod(cartodb_id, 5) = 2 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 17 AND mod(cartodb_id, 5) = 3 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 17 AND mod(cartodb_id, 5) = 4 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 16 AND mod(cartodb_id, 5) = 0 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 16 AND mod(cartodb_id, 5) = 1 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 16 AND mod(cartodb_id, 5) = 2 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 16 AND mod(cartodb_id, 5) = 3 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z = 16 AND mod(cartodb_id, 5) = 4 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z < 16 AND mod(cartodb_id, 5) = 0 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z < 16 AND mod(cartodb_id, 5) = 1 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z < 16 AND mod(cartodb_id, 5) = 2 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z < 16 AND mod(cartodb_id, 5) = 3 AND x_int IS null
+UPDATE gfw2_forma_latest SET x_int = x::int WHERE z < 16 AND mod(cartodb_id, 5) = 4 AND x_int IS null
+
+ALTER TABLE gfw2_forma_latest ADD COLUMN y_int int;
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 17 AND mod(cartodb_id, 5) = 0 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 17 AND mod(cartodb_id, 5) = 1 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 17 AND mod(cartodb_id, 5) = 2 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 17 AND mod(cartodb_id, 5) = 3 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 17 AND mod(cartodb_id, 5) = 4 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 16 AND mod(cartodb_id, 5) = 0 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 16 AND mod(cartodb_id, 5) = 1 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 16 AND mod(cartodb_id, 5) = 2 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 16 AND mod(cartodb_id, 5) = 3 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z = 16 AND mod(cartodb_id, 5) = 4 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z < 16 AND mod(cartodb_id, 5) = 0 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z < 16 AND mod(cartodb_id, 5) = 1 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z < 16 AND mod(cartodb_id, 5) = 2 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z < 16 AND mod(cartodb_id, 5) = 3 AND y_int IS null
+UPDATE gfw2_forma_latest SET y_int = y::int WHERE z < 16 AND mod(cartodb_id, 5) = 4 AND y_int IS null
+
+ALTER TABLE gfw2_forma_latest ADD COLUMN se_arr int[];
+
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=17 AND mod(cartodb_id, 5) = 0 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=17 AND mod(cartodb_id, 5) = 1 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=17 AND mod(cartodb_id, 5) = 2 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=17 AND mod(cartodb_id, 5) = 3 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=17 AND mod(cartodb_id, 5) = 4 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=16 AND mod(cartodb_id, 5) = 0 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=16 AND mod(cartodb_id, 5) = 1 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=16 AND mod(cartodb_id, 5) = 2 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=16 AND mod(cartodb_id, 5) = 3 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z=16 AND mod(cartodb_id, 5) = 4 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 0 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 1 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 2 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 3 AND se_arr is NULL;
+UPDATE gfw2_forma_latest SET se_arr = se::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 4 AND se_arr is NULL;
+
+# ALTER TABLE gfw2_forma_latest ADD COLUMN sd_arr int[];
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=17 AND mod(cartodb_id, 5) = 0 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=17 AND mod(cartodb_id, 5) = 1 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=17 AND mod(cartodb_id, 5) = 2 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=17 AND mod(cartodb_id, 5) = 3 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=17 AND mod(cartodb_id, 5) = 4 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=16 AND mod(cartodb_id, 5) = 0 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=16 AND mod(cartodb_id, 5) = 1 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=16 AND mod(cartodb_id, 5) = 2 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=16 AND mod(cartodb_id, 5) = 3 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z=16 AND mod(cartodb_id, 5) = 4 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 0 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 1 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 2 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 3 AND sd_arr is NULL;
+UPDATE gfw2_forma_latest SET sd_arr = sd::int[] WHERE z < 16 AND mod(cartodb_id, 5) = 4 AND sd_arr is NULL;
+
+ALTER TABLE gfw2_forma_latest DROP COLUMN sd;
+ALTER TABLE gfw2_forma_latest RENAME COLUMN sd_arr TO sd;
+ 
+ALTER TABLE gfw2_forma_latest DROP COLUMN se;
+ALTER TABLE gfw2_forma_latest RENAME COLUMN se_arr TO se;
+ 
+ALTER TABLE gfw2_forma_latest DROP COLUMN x;
+ALTER TABLE gfw2_forma_latest RENAME COLUMN x_int to x;
+ 
+ALTER TABLE gfw2_forma_latest DROP COLUMN y;
+ALTER TABLE gfw2_forma_latest RENAME COLUMN y_int to y;
+ 
+DROP INDEX IF EXISTS gfw2_forma_latest_x_idx;
+CREATE INDEX gfw2_forma_latest_x_idx ON gfw2_forma_latest (x);
+
+DROP INDEX IF EXISTS gfw2_forma_latest_y_idx;
+CREATE INDEX gfw2_forma_latest_y_idx ON gfw2_forma_latest (y);
