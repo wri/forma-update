@@ -1,0 +1,15 @@
+# date column seems to be recognized as such now - no need to do most of this
+# ALTER TABLE forma_api_new ADD COLUMN date_new date;
+#UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 0 AND date_new IS null
+#UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 1 AND date_new IS null
+#UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 2 AND date_new IS null
+#UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 3 AND date_new IS null
+#UPDATE forma_api_new SET date_new = date::date WHERE mod(cartodb_id, 5) = 4 AND date_new IS null
+#ALTER TABLE forma_api_new DROP COLUMN date;
+#ALTER TABLE forma_api_new RENAME COLUMN date_new to date;
+
+
+# add indexes
+CREATE INDEX forma_api_new_iso_idx ON forma_api_new(iso);
+CREATE INDEX forma_api_new_date_idx ON forma_api_new(date);
+CREATE INDEX forma_api_new_iso_date_idx ON forma_api_new(iso, date);
