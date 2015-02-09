@@ -10,6 +10,9 @@
 
 
 # add indexes
+DROP INDEX IF EXISTS forma_api_new_iso_idx;
 CREATE INDEX forma_api_new_iso_idx ON forma_api_new(iso);
+DROP INDEX IF EXISTS forma_api_new_date_idx;
 CREATE INDEX forma_api_new_date_idx ON forma_api_new(date);
+DROP INDEX IF EXISTS forma_api_new_iso_date_idx;
 CREATE INDEX forma_api_new_iso_date_idx ON forma_api_new(iso, date);
